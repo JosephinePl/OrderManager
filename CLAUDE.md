@@ -78,11 +78,4 @@ Violations are compile errors — `OrderManager.Data` must never be referenced b
 
 ## Architecture Decision Records
 
-| ADR | Decision | Status |
-|---|---|---|
-| [ADR-001](docs/adr/ADR-001-architecture-style.md) | Hexagonal modular monolith (Option B) | Accepted |
-| [ADR-002](docs/adr/ADR-002-database.md) | PostgreSQL (SQLite for local dev only) | Accepted |
-| [ADR-003](docs/adr/ADR-003-production-line-export.md) | `IProductionLineExporter` named port | Accepted |
-| [ADR-004](docs/adr/ADR-004-domain-events.md) | Domain events | Deferred |
-| [ADR-005](docs/adr/ADR-005-repository-caching.md) | Repository caching via Decorator pattern | Deferred |
-| [ADR-006](docs/adr/ADR-006-ci-pipeline.md) | CI pipeline: single-job GitHub Actions workflow | Accepted |
+See [docs/adr/](docs/adr/) for all ADRs.
