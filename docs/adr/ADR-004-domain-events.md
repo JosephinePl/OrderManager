@@ -31,6 +31,21 @@ In-process domain events (via MediatR or a simple hand-rolled dispatcher) can be
 - Transaction boundary risk: dispatching before `SaveChanges()` means handlers read stale state; dispatching after means a handler failure cannot roll back a committed write.
 - Test complexity: unit tests must assert that the correct event was raised, or mock the dispatcher and miss handler wiring.
 
+## Persistence model: repository port vs. event-driven persistence
+
+A stricter hexagonal reading would have persistence itself triggered by a domain event — the domain emits `OrderCreated`, and a driven adapter reacts by writing to the database. In that model the domain never calls a repository at all; it stays completely passive about storage.
+
+This project uses the **repository port approach** instead: `IOrderRepository` is a port in `Core`, `OrderRepository` (EF Core) is the driven adapter in `Data`. The service calls the port directly; the domain never references EF Core. This satisfies the hexagonal dependency rule (Core has zero infrastructure dependencies) while avoiding the additional ceremony of an event-driven persistence layer.
+
+| | Repository port (chosen) | Event-driven persistence |
+|---|---|---|
+| Domain references infrastructure? | No — via port interface | No — purely passive |
+| Persistence triggered by | Service calling port | Adapter reacting to domain event |
+| Complexity | Low | High |
+| Fits a 3-entity CRUD app? | Yes | Overkill |
+
+The event-driven persistence model becomes compelling when the domain needs to be replayed (event sourcing) or when multiple bounded contexts must react to the same fact. Neither condition applies here.
+
 ## Decision
 
 **Deferred.** Domain events are a strong talking point for the coding challenge interview, specifically the `OrderReadyForProductionEvent` → `ExportOrderOnReadyHandler` path. Whether to include them — and to what depth — will be decided when concrete implementation begins.
