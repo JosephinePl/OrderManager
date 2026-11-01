@@ -9,4 +9,13 @@ namespace OrderManager.Core.Entities;
 /// <param name="ComponentId">The ID of the associated component.</param>
 /// <param name="Component">The associated component.</param>
 /// <param name="QuantityPerBoard">The number of this component required per board.</param>
-public sealed record BoardComponent(Guid BoardId, Board Board, Guid ComponentId, Component Component, int QuantityPerBoard);
+public sealed record BoardComponent(Guid BoardId, Board Board, Guid ComponentId, Component Component, int QuantityPerBoard)
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BoardComponent"/> class for use by EF Core materialization.
+    /// </summary>
+    private BoardComponent()
+        : this(default, null!, default, null!, default)
+    {
+    }
+}
