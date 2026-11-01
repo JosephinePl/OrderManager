@@ -37,29 +37,22 @@ classDiagram
     }
 
     namespace Core_Ports {
+        class IRepository~T~ {
+            <<interface>>
+            +GetByIdAsync(Guid id, CancellationToken ct) Task~T?~
+            +GetAllAsync(CancellationToken ct) Task~IReadOnlyList~T~~
+            +AddAsync(T entity, CancellationToken ct) Task
+            +UpdateAsync(T entity, CancellationToken ct) Task
+            +DeleteAsync(Guid id, CancellationToken ct) Task
+        }
         class IOrderRepository {
             <<interface>>
-            +GetByIdAsync(Guid id, CancellationToken ct) Task~Order?~
-            +GetAllAsync(CancellationToken ct) Task~IEnumerable~Order~~
-            +AddAsync(Order order, CancellationToken ct) Task
-            +UpdateAsync(Order order, CancellationToken ct) Task
-            +DeleteAsync(Guid id, CancellationToken ct) Task
         }
         class IBoardRepository {
             <<interface>>
-            +GetByIdAsync(Guid id, CancellationToken ct) Task~Board?~
-            +GetAllAsync(CancellationToken ct) Task~IEnumerable~Board~~
-            +AddAsync(Board board, CancellationToken ct) Task
-            +UpdateAsync(Board board, CancellationToken ct) Task
-            +DeleteAsync(Guid id, CancellationToken ct) Task
         }
         class IComponentRepository {
             <<interface>>
-            +GetByIdAsync(Guid id, CancellationToken ct) Task~Component?~
-            +GetAllAsync(CancellationToken ct) Task~IEnumerable~Component~~
-            +AddAsync(Component component, CancellationToken ct) Task
-            +UpdateAsync(Component component, CancellationToken ct) Task
-            +DeleteAsync(Guid id, CancellationToken ct) Task
         }
         class IOrderService {
             <<interface>>
@@ -125,35 +118,29 @@ classDiagram
     }
 
     namespace Data_Adapters {
-        class AppDbContext {
+        class OrderManagerDbContext {
             +DbSet~Order~ Orders
             +DbSet~Board~ Boards
             +DbSet~Component~ Components
             +OnModelCreating(ModelBuilder mb) void
         }
-        class OrderRepository {
-            -AppDbContext _db
-            +GetByIdAsync(Guid id, CancellationToken ct) Task~Order?~
-            +GetAllAsync(CancellationToken ct) Task~IEnumerable~Order~~
-            +AddAsync(Order order, CancellationToken ct) Task
-            +UpdateAsync(Order order, CancellationToken ct) Task
+        class RepositoryBase~T~ {
+            <<abstract>>
+            -OrderManagerDbContext _context
+            +GetByIdAsync(Guid id, CancellationToken ct) Task~T?~
+            +GetAllAsync(CancellationToken ct) Task~IReadOnlyList~T~~
+            +AddAsync(T entity, CancellationToken ct) Task
+            +UpdateAsync(T entity, CancellationToken ct) Task
             +DeleteAsync(Guid id, CancellationToken ct) Task
+        }
+        class OrderRepository {
+            <<sealed>>
         }
         class BoardRepository {
-            -AppDbContext _db
-            +GetByIdAsync(Guid id, CancellationToken ct) Task~Board?~
-            +GetAllAsync(CancellationToken ct) Task~IEnumerable~Board~~
-            +AddAsync(Board board, CancellationToken ct) Task
-            +UpdateAsync(Board board, CancellationToken ct) Task
-            +DeleteAsync(Guid id, CancellationToken ct) Task
+            <<sealed>>
         }
         class ComponentRepository {
-            -AppDbContext _db
-            +GetByIdAsync(Guid id, CancellationToken ct) Task~Component?~
-            +GetAllAsync(CancellationToken ct) Task~IEnumerable~Component~~
-            +AddAsync(Component component, CancellationToken ct) Task
-            +UpdateAsync(Component component, CancellationToken ct) Task
-            +DeleteAsync(Guid id, CancellationToken ct) Task
+            <<sealed>>
         }
         class SimulatedFileExportAdapter {
             -string _exportPath
@@ -200,10 +187,19 @@ classDiagram
     BoardComponent --> Board
     BoardComponent --> Component
 
+    %% Core port hierarchy
+    IOrderRepository --|> IRepository~Order~
+    IBoardRepository --|> IRepository~Board~
+    IComponentRepository --|> IRepository~Component~
+
     %% Implementations
     OrderService ..|> IOrderService
     BoardService ..|> IBoardService
     ComponentService ..|> IComponentService
+    RepositoryBase~T~ ..|> IRepository~T~
+    OrderRepository --|> RepositoryBase~Order~
+    BoardRepository --|> RepositoryBase~Board~
+    ComponentRepository --|> RepositoryBase~Component~
     OrderRepository ..|> IOrderRepository
     BoardRepository ..|> IBoardRepository
     ComponentRepository ..|> IComponentRepository
@@ -215,10 +211,8 @@ classDiagram
     BoardService --> IBoardRepository : injects
     ComponentService --> IComponentRepository : injects
 
-    %% Data → AppDbContext
-    OrderRepository --> AppDbContext : injects
-    BoardRepository --> AppDbContext : injects
-    ComponentRepository --> AppDbContext : injects
+    %% Data → OrderManagerDbContext
+    RepositoryBase~T~ --> OrderManagerDbContext : injects
 
     %% Api controllers → service ports
     OrdersController --> IOrderService : injects
@@ -244,3 +238,5 @@ classDiagram
 - `Program.cs` is the **Composition Root** — the only place that references both `OrderManager.Data` and `OrderManager.Business`. It wires every port to its adapter via DI. No domain or business class ever calls `new` on an infrastructure type.
 - Repository mutating methods (`AddAsync`, `UpdateAsync`, `DeleteAsync`) commit immediately inside the implementation — `SaveChangesAsync` is an EF Core detail that must not leak into the `Core` port interface.
 - Controllers inject only the `IXxxService` port — never a repository directly. They translate HTTP ↔ domain and delegate all logic to the service.
+- `RepositoryBase<T>` is internal to `OrderManager.Data`; `Core` never references it. Inheritance is used here for implementation sharing within a single layer — see [ADR-007](../adr/ADR-007-repository-base-inheritance.md) for the rationale over composition.
+- `IOrderRepository`, `IBoardRepository`, `IComponentRepository` are currently empty marker interfaces extending `IRepository<T>`. They exist as named extension points for future entity-specific query methods.
