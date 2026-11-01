@@ -1,0 +1,349 @@
+# editorconfig.org
+# https://github.com/dotnet/docs/blob/main/.editorconfig
+
+# top-most EditorConfig file
+root = true
+
+# Default settings:
+# A newline ending every file
+# Use 4 spaces as indentation
+[*]
+insert_final_newline = false
+indent_style = space
+indent_size = 4
+tab_width = 2
+trim_trailing_whitespace = true
+
+# ReSharper properties
+resharper_csharp_indent_size = 4
+resharper_html_indent_size = 4
+resharper_resx_indent_size = 4
+resharper_sql_indent_size = 4
+resharper_vb_indent_size = 4
+resharper_xmldoc_indent_size = 4
+resharper_xml_indent_size = 4
+
+[project.json]
+indent_size = 4
+
+# C# and Visual Basic files
+[*.{cs,vb}]
+charset = utf-8-bom
+
+# Analyzers
+dotnet_analyzer_diagnostic.category-security.severity = error
+
+# Use AddAuthorizationBuilder to register authorization services and construct policies
+dotnet_diagnostic.asp0025.severity = warning
+
+# CancellationToken parameters must come last
+dotnet_diagnostic.ca1068.severity = warning
+
+# Identifiers should not match keywords.
+dotnet_diagnostic.ca1716.severity = suggestion
+
+# Use Literals Where Appropriate
+dotnet_code_quality.ca1802.api_surface = private, internal
+
+# Call GC.SuppressFinalize correctly
+dotnet_diagnostic.ca1816.severity = warning
+
+# Mark members as static when they do not access instance data.
+dotnet_diagnostic.ca1822.severity = suggestion
+
+# Use property/indexer instead of Enumerable methods (e.g. Count() -> Length/Count).
+dotnet_diagnostic.ca1826.severity = warning
+
+# Use Length/Count property instead of Enumerable.Count().
+dotnet_diagnostic.ca1829.severity = warning
+
+# Use the LoggerMessage delegates. Causes more and complex code. We optimize this only where needed.
+dotnet_diagnostic.ca1848.severity = none
+
+# Use concrete types when possible for improved performance. Only suggestion, conflicts with generic return values, 
+# like List vs. IEnumerable.
+dotnet_diagnostic.ca1859.severity = suggestion
+
+# Avoid constant arrays as arguments.
+dotnet_diagnostic.ca1861.severity = none
+
+# Use ValueTask correctly. ValueTasks should be directly awaited rather than discarded.
+dotnet_diagnostic.ca2012.severity = warning
+
+# Instantiate argument exceptions correctly
+dotnet_diagnostic.ca2208.severity = error
+
+# Template should be a static expression for logging.
+dotnet_diagnostic.ca2254.severity = suggestion
+
+# Remove unnecessary using directives
+dotnet_diagnostic.ide0005.severity = warning
+
+# Use object initializers.
+dotnet_diagnostic.ide0017.severity = suggestion
+
+# Use collection expression / simplify collection initialization.
+dotnet_diagnostic.ide0028.severity = suggestion
+
+# Use auto property.
+dotnet_diagnostic.ide0032.severity = warning
+
+# Use is null check.
+dotnet_diagnostic.ide0041.severity = none
+
+# Remove unnecessary value assignment.
+dotnet_diagnostic.ide0059.severity = warning
+
+# Remove unused parameter.
+dotnet_diagnostic.ide0060.severity = warning
+
+# Use switch expression
+dotnet_diagnostic.ide0066.severity = suggestion
+
+# Use file-scoped namespace.
+dotnet_diagnostic.ide0161.severity = warning
+
+# Use coalesce / null-conditional simplification.
+dotnet_diagnostic.ide0270.severity = none
+
+# Use primary constructor.
+dotnet_diagnostic.ide0290.severity = none
+
+# Use conditional delegate call.
+dotnet_diagnostic.ide1005.severity = warning
+
+# Use GeneratedRegex instead of Regex at runtime.
+dotnet_diagnostic.syslib1045.severity = warning
+
+# SA1633: No copyright header — this is a coding challenge with no applicable copyright.
+dotnet_diagnostic.SA1633.severity = none
+
+# Miscellaneous style rules
+dotnet_sort_system_directives_first = true
+dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
+dotnet_style_predefined_type_for_member_access = true:suggestion
+
+# avoid this. unless absolutely necessary
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+# name all constant fields using PascalCase
+dotnet_naming_rule.constant_fields_should_be_pascal_case.severity = suggestion
+dotnet_naming_rule.constant_fields_should_be_pascal_case.symbols = constant_fields
+dotnet_naming_rule.constant_fields_should_be_pascal_case.style = pascal_case_style
+dotnet_naming_symbols.constant_fields.applicable_kinds = field
+dotnet_naming_symbols.constant_fields.required_modifiers = const
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
+# static fields should have s_ prefix
+dotnet_naming_rule.static_fields_should_have_prefix.severity = suggestion
+dotnet_naming_rule.static_fields_should_have_prefix.symbols = static_fields
+dotnet_naming_rule.static_fields_should_have_prefix.style = static_prefix_style
+dotnet_naming_symbols.static_fields.applicable_kinds = field
+dotnet_naming_symbols.static_fields.required_modifiers = static
+dotnet_naming_symbols.static_fields.applicable_accessibilities = private, internal, private_protected
+dotnet_naming_style.static_prefix_style.required_prefix = s_
+dotnet_naming_style.static_prefix_style.capitalization = camel_case
+
+# internal and private fields should be _camelCase
+dotnet_naming_rule.camel_case_for_private_internal_fields.severity = suggestion
+dotnet_naming_rule.camel_case_for_private_internal_fields.symbols = private_internal_fields
+dotnet_naming_rule.camel_case_for_private_internal_fields.style = camel_case_underscore_style
+dotnet_naming_symbols.private_internal_fields.applicable_kinds = field
+dotnet_naming_symbols.private_internal_fields.applicable_accessibilities = private, internal
+dotnet_naming_style.camel_case_underscore_style.required_prefix = _
+dotnet_naming_style.camel_case_underscore_style.capitalization = camel_case
+
+# Code quality
+dotnet_style_readonly_field = true:suggestion
+dotnet_code_quality_unused_parameters = non_public:suggestion
+
+# Expression-level preferences
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_explicit_tuple_names = true:suggestion
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
+dotnet_style_prefer_inferred_tuple_names = true:suggestion
+dotnet_style_prefer_inferred_anonymous_type_member_names = true:suggestion
+dotnet_style_prefer_auto_properties = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:refactoring
+dotnet_style_prefer_conditional_expression_over_return = true:refactoring
+
+# C# files
+[*.cs]
+# New line preferences
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+
+# Indentation preferences
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_indent_case_contents = true
+csharp_indent_case_contents_when_block = true
+csharp_indent_switch_labels = true
+csharp_indent_labels = one_less_than_current
+
+# Modifier preferences
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:suggestion
+
+# Code style defaults
+csharp_using_directive_placement = inside_namespace:warning
+csharp_prefer_braces = true:refactoring
+csharp_preserve_single_line_blocks = true:none
+csharp_preserve_single_line_statements = false:none
+csharp_prefer_static_local_function = true:suggestion
+csharp_prefer_simple_using_statement = false:none
+csharp_style_prefer_switch_expression = true:suggestion
+
+# Expression-bodied members
+csharp_style_expression_bodied_methods = false:warning
+csharp_style_expression_bodied_constructors = false:warning
+csharp_style_expression_bodied_operators = false:warning
+csharp_style_expression_bodied_properties = false:warning
+csharp_style_expression_bodied_indexers = false:warning
+csharp_style_expression_bodied_accessors = false:warning
+csharp_style_expression_bodied_lambdas = true:refactoring
+csharp_style_expression_bodied_local_functions = false:warning
+
+# Pattern matching
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_inlined_variable_declaration = true:suggestion
+
+# Expression-level preferences
+csharp_prefer_simple_default_expression = true:suggestion
+
+# Null checking preferences
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+
+# Other features
+csharp_style_prefer_index_operator = false:none
+csharp_style_prefer_range_operator = false:none
+csharp_style_pattern_local_over_anonymous_function = false:none
+
+# Space preferences
+csharp_space_after_cast = false
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_after_comma = true
+csharp_space_after_dot = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_after_semicolon_in_for_statement = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_around_declaration_statements = do_not_ignore
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_before_comma = false
+csharp_space_before_dot = false
+csharp_space_before_open_square_brackets = false
+csharp_space_before_semicolon_in_for_statement = false
+csharp_space_between_empty_square_brackets = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_parentheses = false
+csharp_space_between_square_brackets = false
+
+# Namespace preference
+csharp_style_namespace_declarations = file_scoped:suggestion
+
+# Types: Do not use var
+csharp_style_var_for_built_in_types = false:warning
+csharp_style_var_when_type_is_apparent = false:warning
+csharp_style_var_elsewhere = false:warning
+
+# Prefix local calls with this
+dotnet_diagnostic.sa1101.severity = none
+
+# Do not use regions
+dotnet_diagnostic.sa1124.severity = none
+
+# Generic type constraints must be on own line
+dotnet_diagnostic.sa1127.severity = none
+
+# Variable names must not be prefixed. We use s_ for static fields, https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/identifier-names.
+dotnet_diagnostic.sa1308.severity = none
+
+# Field names must not begin with underscore
+dotnet_diagnostic.sa1309.severity = none
+
+# Static readonly fields must begin with upper case letter. We use s_, https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/identifier-names.
+dotnet_diagnostic.sa1311.severity = none
+
+# C# Test files
+[*Tests.cs]
+# Identifiers should not contain underscores. Disable for test projects for When_Then pattern.
+dotnet_diagnostic.ca1707.severity = none
+
+# Non-nullable variable must contain a non-null value when exiting constructor. In tests, all fields are normally set 
+# in TestInitialize method. Thus, the rule does not make sense for test classes.
+dotnet_diagnostic.cs8618.severity = none
+
+# Use proper 'Assert' methods
+dotnet_diagnostic.mstest0037.severity = warning
+
+# Use cooperative cancellation for timeout
+dotnet_diagnostic.mstest0045.severity = none
+
+# Use Assert instead of StringAssert.
+dotnet_diagnostic.mstest0046.severity = warning
+
+# Use TestContext.CancellationTokenSource.Token into async calls in tests, so a test actually stops when
+# cancelled/times out. Default severity is suggestion (easy to miss); raise it so we catch these locally.
+dotnet_diagnostic.mstest0049.severity = warning
+
+# Avoid assertions in catch blocks.
+dotnet_diagnostic.mstest0058.severity = warning
+
+# Use Assert instead of CollectionAssert.
+dotnet_diagnostic.mstest0068.severity = warning
+
+# Visual Basic files
+[*.vb]
+# Modifier preferences
+visual_basic_preferred_modifier_order = Partial,Default,Private,Protected,Public,Friend,NotOverridable,Overridable,MustOverride,Overloads,Overrides,MustInherit,NotInheritable,Static,Shared,Shadows,ReadOnly,WriteOnly,Dim,Const,WithEvents,Widening,Narrowing,Custom,Async:suggestion
+
+# C++ Files
+[*.{cpp,h,in}]
+curly_bracket_next_line = true
+indent_brace_style = Allman
+
+# Xml project files
+[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,nativeproj,locproj}]
+indent_size = 4
+ij_xml_space_before_closing_empty_tag = false # Rider: no space before "/>".
+
+# Xml build files
+[*.builds]
+indent_size = 4
+
+# Xml files
+[*.{xml,stylecop,resx,ruleset}]
+indent_size = 4
+
+# Xml config files
+[*.{props,targets,config,nuspec}]
+indent_size = 4
+
+# Shell scripts
+[*.sh]
+end_of_line = lf
+
+[*.{cmd, bat}]
+end_of_line = crlf
+
+# Markdown files
+[*.md]
+# Double trailing spaces can be used for BR tags, and other instances are enforced by Markdownlint
+trim_trailing_whitespace = false

@@ -6,6 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 OrderManager is a C# (.NET) application for managing SMT (Surface-Mount Technology) manufacturing orders. It is built from a coding challenge specification located at [docs/story/ASMPT_Coding_Challenge_EN.pdf](docs/story/ASMPT_Coding_Challenge_EN.pdf).
 
+## Tech Stack
+
+- **Runtime:** .NET 10, C# (latest language version)
+- **API framework:** ASP.NET Core with controllers, OpenAPI via `Microsoft.AspNetCore.OpenApi`, Scalar UI via `Scalar.AspNetCore`
+- **ORM:** EF Core 10 with `Npgsql.EntityFrameworkCore.PostgreSQL`
+- **Test framework:** MSTest 3, NSubstitute (mocking), EF Core InMemory (repository tests)
+- **Solution format:** `.slnx` (XML-based, .NET 10)
+
+## Coding Guidelines
+
+See [docs/coding-guidelines.md](docs/coding-guidelines.md) for the full rule set.
+
+Machine-enforceable rules are in [.editorconfig](.editorconfig), [Directory.Build.props](Directory.Build.props), and [OrderManager.slnx.DotSettings](OrderManager.slnx.DotSettings).
+
 ## Build, Test, and Run Commands
 
 Once the solution is set up, these are the standard commands:
@@ -70,3 +84,4 @@ Violations are compile errors — `OrderManager.Data` must never be referenced b
 | [ADR-002](docs/adr/ADR-002-database.md) | PostgreSQL (SQLite for local dev only) | Accepted |
 | [ADR-003](docs/adr/ADR-003-production-line-export.md) | `IProductionLineExporter` named port | Accepted |
 | [ADR-004](docs/adr/ADR-004-domain-events.md) | Domain events | Deferred |
+| [ADR-005](docs/adr/ADR-005-repository-caching.md) | Repository caching via Decorator pattern | Deferred |

@@ -1,0 +1,24 @@
+<wpf:ResourceDictionary
+  xml:space="preserve"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:s="clr-namespace:System;assembly=mscorlib"
+  xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml"
+  xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+
+  <!-- Code style: defer to .editorconfig for naming and formatting -->
+
+  <!-- Inspections -->
+  <s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=PossibleNullReferenceException/@EntryIndexedValue">ERROR</s:String>
+  <s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=ReturnValueOfPureMethodIsNotUsed/@EntryIndexedValue">WARNING</s:String>
+  <s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=UnusedMemberInSuper_002EGlobal/@EntryIndexedValue">WARNING</s:String>
+  <s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=MemberCanBePrivate_002EGlobal/@EntryIndexedValue">SUGGESTION</s:String>
+  <s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=ClassNeverInstantiated_002EGlobal/@EntryIndexedValue">WARNING</s:String>
+
+  <!-- Use .editorconfig as the authoritative source for code style -->
+  <s:Boolean x:Key="/Default/CodeStyle/EditorConfig/IsEditorConfigEnabled/@EntryValue">True</s:Boolean>
+  <s:Boolean x:Key="/Default/CodeStyle/EditorConfig/IsEditorConfigExportEnabled/@EntryValue">False</s:Boolean>
+
+  <!-- Member layout order: fields, constructors, properties, methods -->
+  <s:String x:Key="/Default/CodeStyle/Generate/Patterns/0cbcf2c5-4b35-48c4-b0a7-9a07bc3b6b2b/@EntryIndexedValue">&lt;Pattern&gt;&lt;Entry DisplayName="Fields" /&gt;&lt;Entry DisplayName="Constructors" /&gt;&lt;Entry DisplayName="Properties" /&gt;&lt;Entry DisplayName="Methods" /&gt;&lt;/Pattern&gt;</s:String>
+
+</wpf:ResourceDictionary>
