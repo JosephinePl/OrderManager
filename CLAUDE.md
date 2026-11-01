@@ -85,3 +85,4 @@ Violations are compile errors — `OrderManager.Data` must never be referenced b
 | [ADR-003](docs/adr/ADR-003-production-line-export.md) | `IProductionLineExporter` named port | Accepted |
 | [ADR-004](docs/adr/ADR-004-domain-events.md) | Domain events | Deferred |
 | [ADR-005](docs/adr/ADR-005-repository-caching.md) | Repository caching via Decorator pattern | Deferred |
+| [ADR-006](docs/adr/ADR-006-ci-pipeline.md) | CI pipeline: single-job GitHub Actions workflow | Accepted |
