@@ -115,6 +115,9 @@ dotnet_diagnostic.ide1005.severity = warning
 # Use GeneratedRegex instead of Regex at runtime.
 dotnet_diagnostic.syslib1045.severity = warning
 
+# SA1629: Documentation text must end with a period.
+dotnet_diagnostic.SA1629.severity = warning
+
 # SA1633: No copyright header — this is a coding challenge with no applicable copyright.
 dotnet_diagnostic.SA1633.severity = none
 
