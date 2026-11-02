@@ -91,7 +91,7 @@ See [diagrams/option-a-monolith.md](diagrams/option-a-monolith.md)
 
 `OrderManager.Blazor` (Blazor WASM) is an **optional addition** that satisfies the *Web Interface* optional requirement. The challenge spec mandates **authentication (login)** if a web UI is included — Blazor is therefore only added alongside an auth layer. When added, it is served as static files directly from the API host — no separate container, no CORS.
 
-**What "hexagonal" means here:** The domain core (`Core` + `Business`) defines interfaces ("ports") for everything it needs — `IOrderRepository`, `IOrderService`, `IProductionLineExporter`, etc. HTTP controllers, EF Core repositories, and the simulated production-line adapter are "adapters" plugged in from outside at startup. The domain never references any infrastructure package.
+**What "hexagonal" means here:** The domain core (`Core` + `Business`) defines interfaces ("ports") for everything it needs — `IOrderDataPort`, `IBoardDataPort`, `IComponentDataPort`, `IOrderService`, `IProductionLineExporter`, etc. HTTP controllers, the EF Core data adapter, and the simulated production-line adapter are "adapters" plugged in from outside at startup. The domain never references any infrastructure package.
 
 **Production line port:** The JSON export to the SMT line is modelled as a named port:
 

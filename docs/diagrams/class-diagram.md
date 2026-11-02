@@ -37,22 +37,30 @@ classDiagram
     }
 
     namespace Core_Ports {
-        class IRepository~T~ {
+        class IOrderDataPort {
             <<interface>>
-            +GetByIdAsync(Guid id, CancellationToken ct) Task~T?~
-            +GetAllAsync(CancellationToken ct) Task~IReadOnlyList~T~~
-            +AddAsync(T entity, CancellationToken ct) Task
-            +UpdateAsync(T entity, CancellationToken ct) Task
-            +DeleteAsync(Guid id, CancellationToken ct) Task
+            +GetOrderWithDetailsAsync(Guid id, CancellationToken ct) Task~Order?~
+            +GetOrderByIdAsync(Guid id, CancellationToken ct) Task~Order?~
+            +GetAllOrdersAsync(CancellationToken ct) Task~IReadOnlyList~Order~~
+            +AddOrderAsync(Order order, CancellationToken ct) Task
+            +UpdateOrderAsync(Order order, CancellationToken ct) Task
+            +DeleteOrderAsync(Guid id, CancellationToken ct) Task
         }
-        class IOrderRepository {
+        class IBoardDataPort {
             <<interface>>
+            +GetBoardByIdAsync(Guid id, CancellationToken ct) Task~Board?~
+            +GetAllBoardsAsync(CancellationToken ct) Task~IReadOnlyList~Board~~
+            +AddBoardAsync(Board board, CancellationToken ct) Task
+            +UpdateBoardAsync(Board board, CancellationToken ct) Task
+            +DeleteBoardAsync(Guid id, CancellationToken ct) Task
         }
-        class IBoardRepository {
+        class IComponentDataPort {
             <<interface>>
-        }
-        class IComponentRepository {
-            <<interface>>
+            +GetComponentByIdAsync(Guid id, CancellationToken ct) Task~Component?~
+            +GetAllComponentsAsync(CancellationToken ct) Task~IReadOnlyList~Component~~
+            +AddComponentAsync(Component component, CancellationToken ct) Task
+            +UpdateComponentAsync(Component component, CancellationToken ct) Task
+            +DeleteComponentAsync(Guid id, CancellationToken ct) Task
         }
         class IOrderService {
             <<interface>>
@@ -87,7 +95,7 @@ classDiagram
 
     namespace Business_Services {
         class OrderService {
-            -IOrderRepository _repo
+            -IOrderDataPort _data
             -IProductionLineExporter _exporter
             -ILogger~OrderService~ _logger
             +CreateAsync(CreateOrderRequest req, CancellationToken ct) Task~Order~
@@ -98,7 +106,7 @@ classDiagram
             +ExportToProductionLineAsync(Guid id, CancellationToken ct) Task
         }
         class BoardService {
-            -IBoardRepository _repo
+            -IBoardDataPort _data
             -ILogger~BoardService~ _logger
             +CreateAsync(CreateBoardRequest req, CancellationToken ct) Task~Board~
             +GetByIdAsync(Guid id, CancellationToken ct) Task~Board?~
@@ -107,7 +115,7 @@ classDiagram
             +DeleteAsync(Guid id, CancellationToken ct) Task~bool~
         }
         class ComponentService {
-            -IComponentRepository _repo
+            -IComponentDataPort _data
             -ILogger~ComponentService~ _logger
             +CreateAsync(CreateComponentRequest req, CancellationToken ct) Task~Component~
             +GetByIdAsync(Guid id, CancellationToken ct) Task~Component?~
@@ -124,23 +132,25 @@ classDiagram
             +DbSet~Component~ Components
             +OnModelCreating(ModelBuilder mb) void
         }
-        class RepositoryBase~T~ {
-            <<abstract>>
+        class EfCoreDataAdapter {
+            <<sealed>>
             -OrderManagerDbContext _context
-            +GetByIdAsync(Guid id, CancellationToken ct) Task~T?~
-            +GetAllAsync(CancellationToken ct) Task~IReadOnlyList~T~~
-            +AddAsync(T entity, CancellationToken ct) Task
-            +UpdateAsync(T entity, CancellationToken ct) Task
-            +DeleteAsync(Guid id, CancellationToken ct) Task
-        }
-        class OrderRepository {
-            <<sealed>>
-        }
-        class BoardRepository {
-            <<sealed>>
-        }
-        class ComponentRepository {
-            <<sealed>>
+            -ILogger~EfCoreDataAdapter~ _logger
+            +GetOrderByIdAsync(Guid id, CancellationToken ct) Task~Order?~
+            +GetAllOrdersAsync(CancellationToken ct) Task~IReadOnlyList~Order~~
+            +AddOrderAsync(Order order, CancellationToken ct) Task
+            +UpdateOrderAsync(Order order, CancellationToken ct) Task
+            +DeleteOrderAsync(Guid id, CancellationToken ct) Task
+            +GetBoardByIdAsync(Guid id, CancellationToken ct) Task~Board?~
+            +GetAllBoardsAsync(CancellationToken ct) Task~IReadOnlyList~Board~~
+            +AddBoardAsync(Board board, CancellationToken ct) Task
+            +UpdateBoardAsync(Board board, CancellationToken ct) Task
+            +DeleteBoardAsync(Guid id, CancellationToken ct) Task
+            +GetComponentByIdAsync(Guid id, CancellationToken ct) Task~Component?~
+            +GetAllComponentsAsync(CancellationToken ct) Task~IReadOnlyList~Component~~
+            +AddComponentAsync(Component component, CancellationToken ct) Task
+            +UpdateComponentAsync(Component component, CancellationToken ct) Task
+            +DeleteComponentAsync(Guid id, CancellationToken ct) Task
         }
         class SimulatedFileExportAdapter {
             -string _exportPath
@@ -187,32 +197,23 @@ classDiagram
     BoardComponent --> Board
     BoardComponent --> Component
 
-    %% Core port hierarchy
-    IOrderRepository --|> IRepository~Order~
-    IBoardRepository --|> IRepository~Board~
-    IComponentRepository --|> IRepository~Component~
-
     %% Implementations
     OrderService ..|> IOrderService
     BoardService ..|> IBoardService
     ComponentService ..|> IComponentService
-    RepositoryBase~T~ ..|> IRepository~T~
-    OrderRepository --|> RepositoryBase~Order~
-    BoardRepository --|> RepositoryBase~Board~
-    ComponentRepository --|> RepositoryBase~Component~
-    OrderRepository ..|> IOrderRepository
-    BoardRepository ..|> IBoardRepository
-    ComponentRepository ..|> IComponentRepository
+    EfCoreDataAdapter ..|> IOrderDataPort
+    EfCoreDataAdapter ..|> IBoardDataPort
+    EfCoreDataAdapter ..|> IComponentDataPort
     SimulatedFileExportAdapter ..|> IProductionLineExporter
 
     %% Business → Core ports (constructor injection)
-    OrderService --> IOrderRepository : injects
+    OrderService --> IOrderDataPort : injects
     OrderService --> IProductionLineExporter : injects
-    BoardService --> IBoardRepository : injects
-    ComponentService --> IComponentRepository : injects
+    BoardService --> IBoardDataPort : injects
+    ComponentService --> IComponentDataPort : injects
 
     %% Data → OrderManagerDbContext
-    RepositoryBase~T~ --> OrderManagerDbContext : injects
+    EfCoreDataAdapter --> OrderManagerDbContext : injects
 
     %% Api controllers → service ports
     OrdersController --> IOrderService : injects
@@ -220,9 +221,9 @@ classDiagram
     ComponentsController --> IComponentService : injects
 
     %% Program.cs wires ports to adapters (composition root)
-    Program ..> IOrderRepository : registers OrderRepository
-    Program ..> IBoardRepository : registers BoardRepository
-    Program ..> IComponentRepository : registers ComponentRepository
+    Program ..> IOrderDataPort : registers EfCoreDataAdapter
+    Program ..> IBoardDataPort : registers EfCoreDataAdapter
+    Program ..> IComponentDataPort : registers EfCoreDataAdapter
     Program ..> IOrderService : registers OrderService
     Program ..> IBoardService : registers BoardService
     Program ..> IComponentService : registers ComponentService
@@ -236,7 +237,6 @@ classDiagram
 - `DomainEvents` / `Complete()` / `ClearEvents()` on `Order` are pre-wired for the optional domain-event pattern (see [ADR-004](../adr/ADR-004-domain-events.md)) — remove them if domain events are deferred.
 - `SimulatedFileExportAdapter` is registered in DI for the `Development` environment only; a real factory-floor adapter (MQTT, IPC-CFX) replaces it in `Production` via a single DI registration change.
 - `Program.cs` is the **Composition Root** — the only place that references both `OrderManager.Data` and `OrderManager.Business`. It wires every port to its adapter via DI. No domain or business class ever calls `new` on an infrastructure type.
-- Repository mutating methods (`AddAsync`, `UpdateAsync`, `DeleteAsync`) commit immediately inside the implementation — `SaveChangesAsync` is an EF Core detail that must not leak into the `Core` port interface.
-- Controllers inject only the `IXxxService` port — never a repository directly. They translate HTTP ↔ domain and delegate all logic to the service.
-- `RepositoryBase<T>` is internal to `OrderManager.Data`; `Core` never references it. Inheritance is used here for implementation sharing within a single layer — see [ADR-007](../adr/ADR-007-repository-base-inheritance.md) for the rationale over composition.
-- `IOrderRepository`, `IBoardRepository`, `IComponentRepository` are currently empty marker interfaces extending `IRepository<T>`. They exist as named extension points for future entity-specific query methods.
+- `EfCoreDataAdapter` commits immediately inside each mutating method — `SaveChangesAsync` is an EF Core detail that must not leak into the `Core` port interface.
+- Controllers inject only the `IXxxService` port — never a data port directly. They translate HTTP ↔ domain and delegate all logic to the service.
+- `IOrderDataPort`, `IBoardDataPort`, and `IComponentDataPort` are the three entity-specific driven ports for persistence. Each service depends only on its own port (ISP). `EfCoreDataAdapter` implements all three via a single shared `DbContext`. See [ADR-009](../adr/ADR-009-split-data-ports.md) for the rationale.

@@ -1,7 +1,10 @@
 # ADR-007 — Repository Implementation: Inheritance over Composition for `RepositoryBase<T>`
 
-**Status:** Accepted  
-**Date:** 2026-11-01
+**Status:** Superseded by [ADR-008](ADR-008-unified-data-port.md)  
+**Date:** 2026-11-01  
+**Superseded:** 2026-11-02
+
+> The per-entity repository split that made this inheritance decision necessary was itself removed. See ADR-008.
 
 ---
 

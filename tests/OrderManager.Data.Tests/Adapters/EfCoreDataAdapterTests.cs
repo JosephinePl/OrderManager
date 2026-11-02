@@ -1,16 +1,16 @@
-namespace OrderManager.Data.Tests.Repositories;
+namespace OrderManager.Data.Tests.Adapters;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using OrderManager.Core.Entities;
-using OrderManager.Data.Repositories;
+using OrderManager.Data.Adapters;
 
 /// <summary>
-/// Integration tests for <see cref="RepositoryBase{T}"/> using an EF Core in-memory database.
+/// Integration tests for <see cref="EfCoreDataAdapter"/> using an EF Core in-memory database.
 /// </summary>
 [TestClass]
-public sealed class RepositoryBaseTests : IAsyncDisposable
+public sealed class EfCoreDataAdapterTests : IAsyncDisposable
 {
     #region Fields
 
@@ -20,14 +20,14 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
     private OrderManagerDbContext _context = null!;
 
     /// <summary>
-    /// A substituted logger passed to the repository.
+    /// A substituted logger passed to the adapter.
     /// </summary>
-    private ILogger<RepositoryBase<Order>> _logger = null!;
+    private ILogger<EfCoreDataAdapter> _logger = null!;
 
     /// <summary>
-    /// The system under test — a concrete subtype of <see cref="RepositoryBase{T}"/>.
+    /// The system under test.
     /// </summary>
-    private OrderRepository _sut = null!;
+    private EfCoreDataAdapter _sut = null!;
 
     #endregion
 
@@ -43,7 +43,7 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
     #region Test Lifecycle
 
     /// <summary>
-    /// Creates a fresh in-memory database and repository instance before each test.
+    /// Creates a fresh in-memory database and adapter instance before each test.
     /// </summary>
     [TestInitialize]
     public void Initialize()
@@ -53,8 +53,8 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
             .Options;
 
         _context = new OrderManagerDbContext(options);
-        _logger = Substitute.For<ILogger<RepositoryBase<Order>>>();
-        _sut = new OrderRepository(_context, _logger);
+        _logger = Substitute.For<ILogger<EfCoreDataAdapter>>();
+        _sut = new EfCoreDataAdapter(_context, _logger);
     }
 
     /// <summary>
@@ -68,14 +68,14 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
 
     #endregion
 
-    #region GetByIdAsync
+    #region GetOrderByIdAsync
 
     /// <summary>
     /// Returns the entity when it exists in the database.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [TestMethod]
-    public async Task WhenGetByIdAsyncAndEntityExists_ThenEntityIsReturned()
+    public async Task WhenGetOrderByIdAsyncAndEntityExists_ThenEntityIsReturned()
     {
         // Arrange.
         Order order = CreateOrder();
@@ -83,7 +83,7 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
         await _context.SaveChangesAsync(TestContext.CancellationToken);
 
         // Act.
-        Order? result = await _sut.GetByIdAsync(order.Id, TestContext.CancellationToken);
+        Order? result = await _sut.GetOrderByIdAsync(order.Id, TestContext.CancellationToken);
 
         // Assert.
         Assert.AreEqual(order, result);
@@ -94,10 +94,10 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [TestMethod]
-    public async Task WhenGetByIdAsyncAndEntityDoesNotExist_ThenNullIsReturned()
+    public async Task WhenGetOrderByIdAsyncAndEntityDoesNotExist_ThenNullIsReturned()
     {
         // Act.
-        Order? result = await _sut.GetByIdAsync(Guid.NewGuid(), TestContext.CancellationToken);
+        Order? result = await _sut.GetOrderByIdAsync(Guid.NewGuid(), TestContext.CancellationToken);
 
         // Assert.
         Assert.IsNull(result);
@@ -105,21 +105,21 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
 
     #endregion
 
-    #region GetAllAsync
+    #region GetAllOrdersAsync
 
     /// <summary>
     /// Returns all entities when the store is non-empty.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [TestMethod]
-    public async Task WhenGetAllAsyncAndEntitiesExist_ThenAllEntitiesAreReturned()
+    public async Task WhenGetAllOrdersAsyncAndEntitiesExist_ThenAllEntitiesAreReturned()
     {
         // Arrange.
         await _context.Orders.AddRangeAsync(new[] { CreateOrder(), CreateOrder() }, TestContext.CancellationToken);
         await _context.SaveChangesAsync(TestContext.CancellationToken);
 
         // Act.
-        IReadOnlyList<Order> result = await _sut.GetAllAsync(TestContext.CancellationToken);
+        IReadOnlyList<Order> result = await _sut.GetAllOrdersAsync(TestContext.CancellationToken);
 
         // Assert.
         Assert.HasCount(2, result);
@@ -130,10 +130,10 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [TestMethod]
-    public async Task WhenGetAllAsyncAndNoEntitiesExist_ThenEmptyListIsReturned()
+    public async Task WhenGetAllOrdersAsyncAndNoEntitiesExist_ThenEmptyListIsReturned()
     {
         // Act.
-        IReadOnlyList<Order> result = await _sut.GetAllAsync(TestContext.CancellationToken);
+        IReadOnlyList<Order> result = await _sut.GetAllOrdersAsync(TestContext.CancellationToken);
 
         // Assert.
         Assert.IsEmpty(result);
@@ -141,20 +141,20 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
 
     #endregion
 
-    #region AddAsync
+    #region AddOrderAsync
 
     /// <summary>
     /// Persists the entity so it can subsequently be retrieved by ID.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [TestMethod]
-    public async Task WhenAddAsyncAndEntityIsValid_ThenEntityIsPersisted()
+    public async Task WhenAddOrderAsyncAndEntityIsValid_ThenEntityIsPersisted()
     {
         // Arrange.
         Order order = CreateOrder();
 
         // Act.
-        await _sut.AddAsync(order, TestContext.CancellationToken);
+        await _sut.AddOrderAsync(order, TestContext.CancellationToken);
 
         // Assert.
         Order? result = await _context.Orders.FindAsync(new object[] { order.Id }, TestContext.CancellationToken);
@@ -166,22 +166,22 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [TestMethod]
-    public async Task WhenAddAsyncAndEntityIsNull_ThenArgumentNullExceptionIsThrown()
+    public async Task WhenAddOrderAsyncAndEntityIsNull_ThenArgumentNullExceptionIsThrown()
     {
         // Act & Assert.
-        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => _sut.AddAsync(null!, TestContext.CancellationToken));
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => _sut.AddOrderAsync(null!, TestContext.CancellationToken));
     }
 
     #endregion
 
-    #region UpdateAsync
+    #region UpdateOrderAsync
 
     /// <summary>
     /// Persists property changes on an existing entity.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [TestMethod]
-    public async Task WhenUpdateAsyncAndEntityIsValid_ThenChangesArePersisted()
+    public async Task WhenUpdateOrderAsyncAndEntityIsValid_ThenChangesArePersisted()
     {
         // Arrange.
         Order order = CreateOrder();
@@ -191,7 +191,7 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
         Order updated = order with { Name = "Updated Name" };
 
         // Act.
-        await _sut.UpdateAsync(updated, TestContext.CancellationToken);
+        await _sut.UpdateOrderAsync(updated, TestContext.CancellationToken);
 
         // Assert.
         Order? result = await _context.Orders.FindAsync(new object[] { order.Id }, TestContext.CancellationToken);
@@ -203,22 +203,22 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [TestMethod]
-    public async Task WhenUpdateAsyncAndEntityIsNull_ThenArgumentNullExceptionIsThrown()
+    public async Task WhenUpdateOrderAsyncAndEntityIsNull_ThenArgumentNullExceptionIsThrown()
     {
         // Act & Assert.
-        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => _sut.UpdateAsync(null!, TestContext.CancellationToken));
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => _sut.UpdateOrderAsync(null!, TestContext.CancellationToken));
     }
 
     #endregion
 
-    #region DeleteAsync
+    #region DeleteOrderAsync
 
     /// <summary>
     /// Removes the entity from the store when it exists.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [TestMethod]
-    public async Task WhenDeleteAsyncAndEntityExists_ThenEntityIsRemoved()
+    public async Task WhenDeleteOrderAsyncAndEntityExists_ThenEntityIsRemoved()
     {
         // Arrange.
         Order order = CreateOrder();
@@ -227,7 +227,7 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
         _context.ChangeTracker.Clear();
 
         // Act.
-        await _sut.DeleteAsync(order.Id, TestContext.CancellationToken);
+        await _sut.DeleteOrderAsync(order.Id, TestContext.CancellationToken);
 
         // Assert.
         Order? result = await _context.Orders.FindAsync(new object[] { order.Id }, TestContext.CancellationToken);
@@ -239,10 +239,10 @@ public sealed class RepositoryBaseTests : IAsyncDisposable
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [TestMethod]
-    public async Task WhenDeleteAsyncAndEntityDoesNotExist_ThenWarningIsLogged()
+    public async Task WhenDeleteOrderAsyncAndEntityDoesNotExist_ThenWarningIsLogged()
     {
         // Act.
-        await _sut.DeleteAsync(Guid.NewGuid(), TestContext.CancellationToken);
+        await _sut.DeleteOrderAsync(Guid.NewGuid(), TestContext.CancellationToken);
 
         // Assert.
         _logger.ReceivedWithAnyArgs(1).Log<object>(LogLevel.Warning, default, default!, null, default!);
