@@ -237,6 +237,104 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
         await DeleteAsync(_context.Components, id, cancellationToken);
     }
 
+    /// <summary>
+    /// Adds a board association to the order with the given ID.
+    /// Has no effect if the association already exists.
+    /// </summary>
+    /// <param name="orderId">The ID of the order.</param>
+    /// <param name="boardId">The ID of the board to associate.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    public async Task AddBoardToOrderAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default)
+    {
+        bool exists = await _context.OrderBoards
+            .AnyAsync(ob => ob.OrderId == orderId && ob.BoardId == boardId, cancellationToken);
+        if (!exists)
+        {
+            Order order = (await _context.Orders.FindAsync(new object[] { orderId }, cancellationToken))!;
+            Board board = (await _context.Boards.FindAsync(new object[] { boardId }, cancellationToken))!;
+            OrderBoard orderBoard = new OrderBoard(orderId, order, boardId, board);
+            await _context.OrderBoards.AddAsync(orderBoard, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Removes the board association from the order with the given ID.
+    /// </summary>
+    /// <param name="orderId">The ID of the order.</param>
+    /// <param name="boardId">The ID of the board to disassociate.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns><see langword="true"/> if the association was removed; <see langword="false"/> if it did not exist.</returns>
+    public async Task<bool> RemoveBoardFromOrderAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default)
+    {
+        OrderBoard? existing = await _context.OrderBoards
+            .FindAsync(new object[] { orderId, boardId }, cancellationToken);
+        bool result;
+        if (existing is not null)
+        {
+            _context.OrderBoards.Remove(existing);
+            await _context.SaveChangesAsync(cancellationToken);
+            result = true;
+        }
+        else
+        {
+            result = false;
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Adds a component association to the board with the given ID, or updates the quantity if it already exists.
+    /// </summary>
+    /// <param name="boardId">The ID of the board.</param>
+    /// <param name="componentId">The ID of the component to associate.</param>
+    /// <param name="quantityPerBoard">The number of this component required per board.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    public async Task AddComponentToBoardAsync(Guid boardId, Guid componentId, int quantityPerBoard, CancellationToken cancellationToken = default)
+    {
+        BoardComponent? existing = await _context.BoardComponents
+            .FindAsync(new object[] { boardId, componentId }, cancellationToken);
+        if (existing is not null)
+        {
+            _context.BoardComponents.Remove(existing);
+        }
+
+        Board board = (await _context.Boards.FindAsync(new object[] { boardId }, cancellationToken))!;
+        Component component = (await _context.Components.FindAsync(new object[] { componentId }, cancellationToken))!;
+        BoardComponent boardComponent = new BoardComponent(boardId, board, componentId, component, quantityPerBoard);
+        await _context.BoardComponents.AddAsync(boardComponent, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Removes the component association from the board with the given ID.
+    /// </summary>
+    /// <param name="boardId">The ID of the board.</param>
+    /// <param name="componentId">The ID of the component to disassociate.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns><see langword="true"/> if the association was removed; <see langword="false"/> if it did not exist.</returns>
+    public async Task<bool> RemoveComponentFromBoardAsync(Guid boardId, Guid componentId, CancellationToken cancellationToken = default)
+    {
+        BoardComponent? existing = await _context.BoardComponents
+            .FindAsync(new object[] { boardId, componentId }, cancellationToken);
+        bool result;
+        if (existing is not null)
+        {
+            _context.BoardComponents.Remove(existing);
+            await _context.SaveChangesAsync(cancellationToken);
+            result = true;
+        }
+        else
+        {
+            result = false;
+        }
+
+        return result;
+    }
+
     #endregion
 
     #region Private Methods

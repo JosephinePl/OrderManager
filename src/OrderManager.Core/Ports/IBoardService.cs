@@ -50,4 +50,29 @@ public interface IBoardService
     /// <see langword="false"/> if no board with the given ID was found.
     /// </returns>
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds a component to the board with the given ID, or updates its quantity if it is already present.
+    /// </summary>
+    /// <param name="boardId">The ID of the board.</param>
+    /// <param name="componentId">The ID of the component to add.</param>
+    /// <param name="quantityPerBoard">The number of this component required per board.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the component was added or updated;
+    /// <see langword="false"/> if the board or component was not found.
+    /// </returns>
+    Task<bool> AddComponentAsync(Guid boardId, Guid componentId, int quantityPerBoard, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes a component from the board with the given ID.
+    /// </summary>
+    /// <param name="boardId">The ID of the board.</param>
+    /// <param name="componentId">The ID of the component to remove.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the component was removed;
+    /// <see langword="false"/> if the board was not found or the component was not part of the board.
+    /// </returns>
+    Task<bool> RemoveComponentAsync(Guid boardId, Guid componentId, CancellationToken cancellationToken = default);
 }

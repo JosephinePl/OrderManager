@@ -15,6 +15,9 @@ public sealed partial class BoardService : IBoardService
     /// <summary>The driven data port.</summary>
     private readonly IBoardDataPort _data;
 
+    /// <summary>The component data port, used to verify component existence.</summary>
+    private readonly IComponentDataPort _componentData;
+
     /// <summary>The logger.</summary>
     private readonly ILogger<BoardService> _logger;
 
@@ -26,12 +29,15 @@ public sealed partial class BoardService : IBoardService
     /// Initializes a new instance of the <see cref="BoardService"/> class.
     /// </summary>
     /// <param name="data">The driven data port.</param>
+    /// <param name="componentData">The component data port, used to verify component existence.</param>
     /// <param name="logger">The logger.</param>
-    public BoardService(IBoardDataPort data, ILogger<BoardService> logger)
+    public BoardService(IBoardDataPort data, IComponentDataPort componentData, ILogger<BoardService> logger)
     {
         ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(componentData);
         ArgumentNullException.ThrowIfNull(logger);
         _data = data;
+        _componentData = componentData;
         _logger = logger;
     }
 
@@ -131,6 +137,73 @@ public sealed partial class BoardService : IBoardService
         return result;
     }
 
+    /// <summary>
+    /// Adds a component to the board with the given ID, or updates its quantity if already present.
+    /// </summary>
+    /// <param name="boardId">The ID of the board.</param>
+    /// <param name="componentId">The ID of the component to add.</param>
+    /// <param name="quantityPerBoard">The number of this component required per board.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the component was added or updated;
+    /// <see langword="false"/> if the board or component was not found.
+    /// </returns>
+    public async Task<bool> AddComponentAsync(Guid boardId, Guid componentId, int quantityPerBoard, CancellationToken cancellationToken = default)
+    {
+        Board? board = await _data.GetBoardByIdAsync(boardId, cancellationToken);
+        bool result;
+        if (board is null)
+        {
+            result = false;
+        }
+        else
+        {
+            Component? component = await _componentData.GetComponentByIdAsync(componentId, cancellationToken);
+            if (component is null)
+            {
+                result = false;
+            }
+            else
+            {
+                await _data.AddComponentToBoardAsync(boardId, componentId, quantityPerBoard, cancellationToken);
+                LogComponentAddedToBoard(_logger, componentId, boardId);
+                result = true;
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Removes a component from the board with the given ID.
+    /// </summary>
+    /// <param name="boardId">The ID of the board.</param>
+    /// <param name="componentId">The ID of the component to remove.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the component was removed;
+    /// <see langword="false"/> if the board was not found or the component was not part of the board.
+    /// </returns>
+    public async Task<bool> RemoveComponentAsync(Guid boardId, Guid componentId, CancellationToken cancellationToken = default)
+    {
+        Board? board = await _data.GetBoardByIdAsync(boardId, cancellationToken);
+        bool result;
+        if (board is null)
+        {
+            result = false;
+        }
+        else
+        {
+            result = await _data.RemoveComponentFromBoardAsync(boardId, componentId, cancellationToken);
+            if (result)
+            {
+                LogComponentRemovedFromBoard(_logger, componentId, boardId);
+            }
+        }
+
+        return result;
+    }
+
     #endregion
 
     #region Private Methods
@@ -153,6 +226,20 @@ public sealed partial class BoardService : IBoardService
     /// <param name="boardId">The ID of the deleted board.</param>
     [LoggerMessage(Level = LogLevel.Information, Message = "Deleted board {BoardId}.")]
     private static partial void LogBoardDeleted(ILogger logger, Guid boardId);
+
+    /// <summary>Logs the addition of a component to a board.</summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="componentId">The ID of the component added.</param>
+    /// <param name="boardId">The ID of the board.</param>
+    [LoggerMessage(Level = LogLevel.Information, Message = "Added component {ComponentId} to board {BoardId}.")]
+    private static partial void LogComponentAddedToBoard(ILogger logger, Guid componentId, Guid boardId);
+
+    /// <summary>Logs the removal of a component from a board.</summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="componentId">The ID of the component removed.</param>
+    /// <param name="boardId">The ID of the board.</param>
+    [LoggerMessage(Level = LogLevel.Information, Message = "Removed component {ComponentId} from board {BoardId}.")]
+    private static partial void LogComponentRemovedFromBoard(ILogger logger, Guid componentId, Guid boardId);
 
     #endregion
 }

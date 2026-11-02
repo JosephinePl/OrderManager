@@ -59,4 +59,29 @@ public interface IOrderService
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     /// <exception cref="KeyNotFoundException">Thrown when no order with the given ID exists.</exception>
     Task ExportToProductionLineAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds a board to the order with the given ID.
+    /// Has no effect if the board is already part of the order.
+    /// </summary>
+    /// <param name="orderId">The ID of the order.</param>
+    /// <param name="boardId">The ID of the board to add.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the board was added;
+    /// <see langword="false"/> if the order or board was not found.
+    /// </returns>
+    Task<bool> AddBoardAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes a board from the order with the given ID.
+    /// </summary>
+    /// <param name="orderId">The ID of the order.</param>
+    /// <param name="boardId">The ID of the board to remove.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the board was removed;
+    /// <see langword="false"/> if the order was not found or the board was not part of the order.
+    /// </returns>
+    Task<bool> RemoveBoardAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default);
 }

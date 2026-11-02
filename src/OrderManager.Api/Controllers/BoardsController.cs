@@ -93,6 +93,37 @@ public sealed class BoardsController : ControllerBase
     }
 
     /// <summary>
+    /// Adds a component to the board with the given IDs, or updates the quantity if already present.
+    /// </summary>
+    /// <param name="boardId">The ID of the board.</param>
+    /// <param name="componentId">The ID of the component to add.</param>
+    /// <param name="request">The quantity of the component required per board.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>204 No Content if added or updated, or 404 if the board or component was not found.</returns>
+    [HttpPut("{boardId:guid}/components/{componentId:guid}")]
+    public async Task<IActionResult> AddComponent(Guid boardId, Guid componentId, AddComponentToBoardRequest request, CancellationToken cancellationToken)
+    {
+        bool added = await _boardService.AddComponentAsync(boardId, componentId, request.QuantityPerBoard, cancellationToken);
+        IActionResult result = added ? NoContent() : NotFound();
+        return result;
+    }
+
+    /// <summary>
+    /// Removes a component from the board with the given IDs.
+    /// </summary>
+    /// <param name="boardId">The ID of the board.</param>
+    /// <param name="componentId">The ID of the component to remove.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>204 No Content if removed, or 404 if the board or component association was not found.</returns>
+    [HttpDelete("{boardId:guid}/components/{componentId:guid}")]
+    public async Task<IActionResult> RemoveComponent(Guid boardId, Guid componentId, CancellationToken cancellationToken)
+    {
+        bool removed = await _boardService.RemoveComponentAsync(boardId, componentId, cancellationToken);
+        IActionResult result = removed ? NoContent() : NotFound();
+        return result;
+    }
+
+    /// <summary>
     /// Deletes the board with the given ID.
     /// </summary>
     /// <param name="id">The ID of the board to delete.</param>

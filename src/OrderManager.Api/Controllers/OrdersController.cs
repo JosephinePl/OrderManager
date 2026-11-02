@@ -107,6 +107,36 @@ public sealed class OrdersController : ControllerBase
     }
 
     /// <summary>
+    /// Adds a board to the order with the given IDs.
+    /// </summary>
+    /// <param name="orderId">The ID of the order.</param>
+    /// <param name="boardId">The ID of the board to add.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>204 No Content if added, or 404 if the order or board was not found.</returns>
+    [HttpPut("{orderId:guid}/boards/{boardId:guid}")]
+    public async Task<IActionResult> AddBoard(Guid orderId, Guid boardId, CancellationToken cancellationToken)
+    {
+        bool added = await _orderService.AddBoardAsync(orderId, boardId, cancellationToken);
+        IActionResult result = added ? NoContent() : NotFound();
+        return result;
+    }
+
+    /// <summary>
+    /// Removes a board from the order with the given IDs.
+    /// </summary>
+    /// <param name="orderId">The ID of the order.</param>
+    /// <param name="boardId">The ID of the board to remove.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>204 No Content if removed, or 404 if the order or board association was not found.</returns>
+    [HttpDelete("{orderId:guid}/boards/{boardId:guid}")]
+    public async Task<IActionResult> RemoveBoard(Guid orderId, Guid boardId, CancellationToken cancellationToken)
+    {
+        bool removed = await _orderService.RemoveBoardAsync(orderId, boardId, cancellationToken);
+        IActionResult result = removed ? NoContent() : NotFound();
+        return result;
+    }
+
+    /// <summary>
     /// Exports the order with the given ID to the production line.
     /// </summary>
     /// <param name="id">The ID of the order to export.</param>

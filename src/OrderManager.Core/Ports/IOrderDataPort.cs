@@ -54,4 +54,23 @@ public interface IOrderDataPort
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task DeleteOrderAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds a board association to the order with the given ID.
+    /// Has no effect if the association already exists.
+    /// </summary>
+    /// <param name="orderId">The ID of the order.</param>
+    /// <param name="boardId">The ID of the board to associate.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task AddBoardToOrderAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes the board association from the order with the given ID.
+    /// </summary>
+    /// <param name="orderId">The ID of the order.</param>
+    /// <param name="boardId">The ID of the board to disassociate.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns><see langword="true"/> if the association was removed; <see langword="false"/> if it did not exist.</returns>
+    Task<bool> RemoveBoardFromOrderAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default);
 }

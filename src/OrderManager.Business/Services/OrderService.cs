@@ -15,6 +15,9 @@ public sealed partial class OrderService : IOrderService
     /// <summary>The driven data port.</summary>
     private readonly IOrderDataPort _data;
 
+    /// <summary>The board data port, used to verify board existence.</summary>
+    private readonly IBoardDataPort _boardData;
+
     /// <summary>The production line export adapter.</summary>
     private readonly IProductionLineExporter _exporter;
 
@@ -29,14 +32,17 @@ public sealed partial class OrderService : IOrderService
     /// Initializes a new instance of the <see cref="OrderService"/> class.
     /// </summary>
     /// <param name="data">The driven data port.</param>
+    /// <param name="boardData">The board data port, used to verify board existence.</param>
     /// <param name="exporter">The production line export adapter.</param>
     /// <param name="logger">The logger.</param>
-    public OrderService(IOrderDataPort data, IProductionLineExporter exporter, ILogger<OrderService> logger)
+    public OrderService(IOrderDataPort data, IBoardDataPort boardData, IProductionLineExporter exporter, ILogger<OrderService> logger)
     {
         ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(boardData);
         ArgumentNullException.ThrowIfNull(exporter);
         ArgumentNullException.ThrowIfNull(logger);
         _data = data;
+        _boardData = boardData;
         _exporter = exporter;
         _logger = logger;
     }
@@ -156,6 +162,73 @@ public sealed partial class OrderService : IOrderService
         LogOrderExported(_logger, id);
     }
 
+    /// <summary>
+    /// Adds a board to the order with the given ID.
+    /// Has no effect if the board is already part of the order.
+    /// </summary>
+    /// <param name="orderId">The ID of the order.</param>
+    /// <param name="boardId">The ID of the board to add.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the board was added;
+    /// <see langword="false"/> if the order or board was not found.
+    /// </returns>
+    public async Task<bool> AddBoardAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default)
+    {
+        Order? order = await _data.GetOrderByIdAsync(orderId, cancellationToken);
+        bool result;
+        if (order is null)
+        {
+            result = false;
+        }
+        else
+        {
+            Board? board = await _boardData.GetBoardByIdAsync(boardId, cancellationToken);
+            if (board is null)
+            {
+                result = false;
+            }
+            else
+            {
+                await _data.AddBoardToOrderAsync(orderId, boardId, cancellationToken);
+                LogBoardAddedToOrder(_logger, boardId, orderId);
+                result = true;
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Removes a board from the order with the given ID.
+    /// </summary>
+    /// <param name="orderId">The ID of the order.</param>
+    /// <param name="boardId">The ID of the board to remove.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the board was removed;
+    /// <see langword="false"/> if the order was not found or the board was not part of the order.
+    /// </returns>
+    public async Task<bool> RemoveBoardAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default)
+    {
+        Order? order = await _data.GetOrderByIdAsync(orderId, cancellationToken);
+        bool result;
+        if (order is null)
+        {
+            result = false;
+        }
+        else
+        {
+            result = await _data.RemoveBoardFromOrderAsync(orderId, boardId, cancellationToken);
+            if (result)
+            {
+                LogBoardRemovedFromOrder(_logger, boardId, orderId);
+            }
+        }
+
+        return result;
+    }
+
     #endregion
 
     #region Private Methods
@@ -184,6 +257,20 @@ public sealed partial class OrderService : IOrderService
     /// <param name="orderId">The ID of the exported order.</param>
     [LoggerMessage(Level = LogLevel.Information, Message = "Exported order {OrderId} to production line.")]
     private static partial void LogOrderExported(ILogger logger, Guid orderId);
+
+    /// <summary>Logs the addition of a board to an order.</summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="boardId">The ID of the board added.</param>
+    /// <param name="orderId">The ID of the order.</param>
+    [LoggerMessage(Level = LogLevel.Information, Message = "Added board {BoardId} to order {OrderId}.")]
+    private static partial void LogBoardAddedToOrder(ILogger logger, Guid boardId, Guid orderId);
+
+    /// <summary>Logs the removal of a board from an order.</summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="boardId">The ID of the board removed.</param>
+    /// <param name="orderId">The ID of the order.</param>
+    [LoggerMessage(Level = LogLevel.Information, Message = "Removed board {BoardId} from order {OrderId}.")]
+    private static partial void LogBoardRemovedFromOrder(ILogger logger, Guid boardId, Guid orderId);
 
     #endregion
 }
