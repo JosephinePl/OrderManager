@@ -14,10 +14,8 @@ public sealed class BoardsController : ControllerBase
 {
     #region Fields
 
-    /// <summary>
-    /// The service used to manage boards.
-    /// </summary>
-    private readonly IBoardService _boardService;
+    /// <summary>The manufacturing service.</summary>
+    private readonly IManufacturingService _service;
 
     #endregion
 
@@ -26,115 +24,95 @@ public sealed class BoardsController : ControllerBase
     /// <summary>
     /// Initializes a new instance of the <see cref="BoardsController"/> class.
     /// </summary>
-    /// <param name="boardService">The service used to manage boards.</param>
-    public BoardsController(IBoardService boardService)
+    /// <param name="service">The manufacturing service.</param>
+    public BoardsController(IManufacturingService service)
     {
-        _boardService = boardService;
+        ArgumentNullException.ThrowIfNull(service);
+        _service = service;
     }
 
     #endregion
 
     #region Public Methods
 
-    /// <summary>
-    /// Returns all boards.
-    /// </summary>
+    /// <summary>Returns all boards.</summary>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A list of all <see cref="Board"/> instances.</returns>
+    /// <returns>An <see cref="IActionResult"/> containing all boards.</returns>
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        IEnumerable<Board> boards = await _boardService.GetAllAsync(cancellationToken);
-        IActionResult result = Ok(boards);
-        return result;
+        IEnumerable<Board> boards = await _service.GetAllBoardsAsync(cancellationToken);
+        return Ok(boards);
     }
 
-    /// <summary>
-    /// Returns the board with the given ID.
-    /// </summary>
+    /// <summary>Returns the board with the given ID, or 404 if not found.</summary>
     /// <param name="id">The ID of the board to retrieve.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>The matching <see cref="Board"/>, or 404 if not found.</returns>
+    /// <returns>An <see cref="IActionResult"/> containing the board, or 404 if not found.</returns>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        Board? board = await _boardService.GetByIdAsync(id, cancellationToken);
-        IActionResult result = board is null ? NotFound() : Ok(board);
-        return result;
+        Board? board = await _service.GetBoardByIdAsync(id, cancellationToken);
+        return board is null ? NotFound() : Ok(board);
     }
 
-    /// <summary>
-    /// Creates a new board.
-    /// </summary>
+    /// <summary>Creates a new board.</summary>
     /// <param name="request">The data for the new board.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>The newly created <see cref="Board"/> with a Location header pointing to it.</returns>
+    /// <returns>An <see cref="IActionResult"/> containing the created board.</returns>
     [HttpPost]
     public async Task<IActionResult> Create(CreateBoardRequest request, CancellationToken cancellationToken)
     {
-        Board board = await _boardService.CreateAsync(request, cancellationToken);
-        IActionResult result = CreatedAtAction(nameof(GetById), new { id = board.Id }, board);
-        return result;
+        Board board = await _service.CreateBoardAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = board.Id }, board);
     }
 
-    /// <summary>
-    /// Updates the board with the given ID.
-    /// </summary>
+    /// <summary>Updates the board with the given ID, or 404 if not found.</summary>
     /// <param name="id">The ID of the board to update.</param>
     /// <param name="request">The updated data for the board.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>The updated <see cref="Board"/>, or 404 if no board with the given ID exists.</returns>
+    /// <returns>An <see cref="IActionResult"/> containing the updated board, or 404 if not found.</returns>
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, UpdateBoardRequest request, CancellationToken cancellationToken)
     {
-        Board? board = await _boardService.UpdateAsync(id, request, cancellationToken);
-        IActionResult result = board is null ? NotFound() : Ok(board);
-        return result;
+        Board? board = await _service.UpdateBoardAsync(id, request, cancellationToken);
+        return board is null ? NotFound() : Ok(board);
     }
 
-    /// <summary>
-    /// Adds a component to the board with the given IDs, or updates the quantity if already present.
-    /// </summary>
+    /// <summary>Adds a component to the board, or updates its quantity. Returns 204 or 404.</summary>
     /// <param name="boardId">The ID of the board.</param>
     /// <param name="componentId">The ID of the component to add.</param>
-    /// <param name="request">The quantity of the component required per board.</param>
+    /// <param name="request">The quantity data for the component.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>204 No Content if added or updated, or 404 if the board or component was not found.</returns>
+    /// <returns>An <see cref="IActionResult"/> with 204 if added or updated, or 404 if not found.</returns>
     [HttpPut("{boardId:guid}/components/{componentId:guid}")]
     public async Task<IActionResult> AddComponent(Guid boardId, Guid componentId, AddComponentToBoardRequest request, CancellationToken cancellationToken)
     {
-        bool added = await _boardService.AddComponentAsync(boardId, componentId, request.QuantityPerBoard, cancellationToken);
-        IActionResult result = added ? NoContent() : NotFound();
-        return result;
+        bool added = await _service.AddComponentToBoardAsync(boardId, componentId, request.QuantityPerBoard, cancellationToken);
+        return added ? NoContent() : NotFound();
     }
 
-    /// <summary>
-    /// Removes a component from the board with the given IDs.
-    /// </summary>
+    /// <summary>Removes a component from the board. Returns 204 or 404.</summary>
     /// <param name="boardId">The ID of the board.</param>
     /// <param name="componentId">The ID of the component to remove.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>204 No Content if removed, or 404 if the board or component association was not found.</returns>
+    /// <returns>An <see cref="IActionResult"/> with 204 if removed, or 404 if not found.</returns>
     [HttpDelete("{boardId:guid}/components/{componentId:guid}")]
     public async Task<IActionResult> RemoveComponent(Guid boardId, Guid componentId, CancellationToken cancellationToken)
     {
-        bool removed = await _boardService.RemoveComponentAsync(boardId, componentId, cancellationToken);
-        IActionResult result = removed ? NoContent() : NotFound();
-        return result;
+        bool removed = await _service.RemoveComponentFromBoardAsync(boardId, componentId, cancellationToken);
+        return removed ? NoContent() : NotFound();
     }
 
-    /// <summary>
-    /// Deletes the board with the given ID.
-    /// </summary>
+    /// <summary>Deletes the board with the given ID. Returns 204 or 404.</summary>
     /// <param name="id">The ID of the board to delete.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>204 No Content if deleted, or 404 if no board with the given ID exists.</returns>
+    /// <returns>An <see cref="IActionResult"/> with 204 if deleted, or 404 if not found.</returns>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        bool deleted = await _boardService.DeleteAsync(id, cancellationToken);
-        IActionResult result = deleted ? NoContent() : NotFound();
-        return result;
+        bool deleted = await _service.DeleteBoardAsync(id, cancellationToken);
+        return deleted ? NoContent() : NotFound();
     }
 
     #endregion

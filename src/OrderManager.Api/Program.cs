@@ -16,9 +16,7 @@ builder.Services.AddDbContext<OrderManagerDbContext>(options =>
 builder.Services.AddScoped<IOrderDataPort, EfCoreDataAdapter>();
 builder.Services.AddScoped<IBoardDataPort, EfCoreDataAdapter>();
 builder.Services.AddScoped<IComponentDataPort, EfCoreDataAdapter>();
-builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IBoardService, BoardService>();
-builder.Services.AddScoped<IComponentService, ComponentService>();
+builder.Services.AddScoped<IManufacturingService, ManufacturingService>();
 
 if (builder.Environment.IsDevelopment())
 {

@@ -5,4 +5,5 @@
   <Project Path="src/OrderManager.Api/OrderManager.Api.csproj" />
   <Project Path="tests/OrderManager.Core.Tests/OrderManager.Core.Tests.csproj" />
   <Project Path="tests/OrderManager.Data.Tests/OrderManager.Data.Tests.csproj" />
+  <Project Path="tests/OrderManager.Business.Tests/OrderManager.Business.Tests.csproj" />
 </Solution>
