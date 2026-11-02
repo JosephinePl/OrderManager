@@ -350,3 +350,7 @@ end_of_line = crlf
 [*.md]
 # Double trailing spaces can be used for BR tags, and other instances are enforced by Markdownlint
 trim_trailing_whitespace = false
+
+# EF Core auto-generated migration files — suppress all analyzer rules
+[**/Migrations/*.cs]
+generated_code = true
