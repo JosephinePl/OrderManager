@@ -45,4 +45,12 @@ public interface IComponentDataPort
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task DeleteComponentAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns <see langword="true"/> when the component with the given ID is associated with at least one board.
+    /// </summary>
+    /// <param name="componentId">The ID of the component to check.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns><see langword="true"/> if at least one board references this component; otherwise <see langword="false"/>.</returns>
+    Task<bool> IsComponentAssignedToAnyBoardAsync(Guid componentId, CancellationToken cancellationToken = default);
 }

@@ -47,6 +47,14 @@ public interface IBoardDataPort
     Task DeleteBoardAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Returns <see langword="true"/> when the board with the given ID is associated with at least one order.
+    /// </summary>
+    /// <param name="boardId">The ID of the board to check.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns><see langword="true"/> if at least one order references this board; otherwise <see langword="false"/>.</returns>
+    Task<bool> IsBoardAssignedToAnyOrderAsync(Guid boardId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Adds a component association to the board with the given ID, or updates the quantity if it already exists.
     /// </summary>
     /// <param name="boardId">The ID of the board.</param>
