@@ -7,15 +7,18 @@ using Scalar.AspNetCore;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
+
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<OrderManagerDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
-builder.Services.AddScoped<IOrderDataPort, EfCoreDataAdapter>();
-builder.Services.AddScoped<IBoardDataPort, EfCoreDataAdapter>();
-builder.Services.AddScoped<IComponentDataPort, EfCoreDataAdapter>();
+builder.Services.AddScoped<EfCoreDataAdapter>();
+builder.Services.AddScoped<IOrderDataPort>(sp => sp.GetRequiredService<EfCoreDataAdapter>());
+builder.Services.AddScoped<IBoardDataPort>(sp => sp.GetRequiredService<EfCoreDataAdapter>());
+builder.Services.AddScoped<IComponentDataPort>(sp => sp.GetRequiredService<EfCoreDataAdapter>());
 builder.Services.AddScoped<IManufacturingService, ManufacturingService>();
 
 if (builder.Environment.IsDevelopment())
