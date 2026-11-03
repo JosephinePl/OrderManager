@@ -29,7 +29,7 @@ public sealed class ManufacturingServiceTests
     private IProductionLineExporter _exporter = null!;
 
     /// <summary>The system under test.</summary>
-    private ManufacturingService _sut = null!;
+    private ManufacturingService _testObject = null!;
 
     #endregion
 
@@ -55,7 +55,7 @@ public sealed class ManufacturingServiceTests
         _componentData = Substitute.For<IComponentDataPort>();
         _exporter = Substitute.For<IProductionLineExporter>();
         ILogger<ManufacturingService> logger = Substitute.For<ILogger<ManufacturingService>>();
-        _sut = new ManufacturingService(_orderData, _boardData, _componentData, _exporter, logger);
+        _testObject = new ManufacturingService(_orderData, _boardData, _componentData, _exporter, logger);
     }
 
     #endregion
@@ -73,7 +73,7 @@ public sealed class ManufacturingServiceTests
         CreateOrderRequest request = new("Test Order", "Desc", DateTimeOffset.UtcNow);
 
         // Act.
-        Order result = await _sut.CreateOrderAsync(request, TestContext.CancellationToken);
+        Order result = await _testObject.CreateOrderAsync(request, TestContext.CancellationToken);
 
         // Assert.
         Assert.AreNotEqual(Guid.Empty, result.Id);
@@ -91,7 +91,7 @@ public sealed class ManufacturingServiceTests
         CreateOrderRequest request = new("Order", "D", DateTimeOffset.UtcNow);
 
         // Act.
-        await _sut.CreateOrderAsync(request, TestContext.CancellationToken);
+        await _testObject.CreateOrderAsync(request, TestContext.CancellationToken);
 
         // Assert.
         await _orderData.Received(1).AddOrderAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>());
@@ -113,7 +113,7 @@ public sealed class ManufacturingServiceTests
         _orderData.GetOrderByIdAsync(id, Arg.Any<CancellationToken>()).Returns((Order?)null);
 
         // Act.
-        bool result = await _sut.DeleteOrderAsync(id, TestContext.CancellationToken);
+        bool result = await _testObject.DeleteOrderAsync(id, TestContext.CancellationToken);
 
         // Assert.
         Assert.IsFalse(result);
@@ -133,7 +133,7 @@ public sealed class ManufacturingServiceTests
         _orderData.GetOrderByIdAsync(id, Arg.Any<CancellationToken>()).Returns(order);
 
         // Act.
-        bool result = await _sut.DeleteOrderAsync(id, TestContext.CancellationToken);
+        bool result = await _testObject.DeleteOrderAsync(id, TestContext.CancellationToken);
 
         // Assert.
         Assert.IsTrue(result);
@@ -156,7 +156,7 @@ public sealed class ManufacturingServiceTests
         _orderData.GetOrderWithDetailsAsync(id, Arg.Any<CancellationToken>()).Returns((Order?)null);
 
         // Act & Assert.
-        await Assert.ThrowsExactlyAsync<KeyNotFoundException>(() => _sut.ExportToProductionLineAsync(id, TestContext.CancellationToken));
+        await Assert.ThrowsExactlyAsync<KeyNotFoundException>(() => _testObject.ExportToProductionLineAsync(id, TestContext.CancellationToken));
         await _exporter.DidNotReceive().ExportAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>());
     }
 
@@ -173,7 +173,7 @@ public sealed class ManufacturingServiceTests
         _orderData.GetOrderWithDetailsAsync(id, Arg.Any<CancellationToken>()).Returns(order);
 
         // Act.
-        await _sut.ExportToProductionLineAsync(id, TestContext.CancellationToken);
+        await _testObject.ExportToProductionLineAsync(id, TestContext.CancellationToken);
 
         // Assert.
         await _exporter.Received(1).ExportAsync(order, Arg.Any<CancellationToken>());
@@ -195,7 +195,7 @@ public sealed class ManufacturingServiceTests
         _orderData.GetOrderByIdAsync(orderId, Arg.Any<CancellationToken>()).Returns((Order?)null);
 
         // Act.
-        bool result = await _sut.AddBoardToOrderAsync(orderId, Guid.NewGuid(), TestContext.CancellationToken);
+        bool result = await _testObject.AddBoardToOrderAsync(orderId, Guid.NewGuid(), TestContext.CancellationToken);
 
         // Assert.
         Assert.IsFalse(result);
@@ -217,7 +217,7 @@ public sealed class ManufacturingServiceTests
         _boardData.GetBoardByIdAsync(boardId, Arg.Any<CancellationToken>()).Returns((Board?)null);
 
         // Act.
-        bool result = await _sut.AddBoardToOrderAsync(orderId, boardId, TestContext.CancellationToken);
+        bool result = await _testObject.AddBoardToOrderAsync(orderId, boardId, TestContext.CancellationToken);
 
         // Assert.
         Assert.IsFalse(result);
@@ -240,7 +240,7 @@ public sealed class ManufacturingServiceTests
         _boardData.GetBoardByIdAsync(boardId, Arg.Any<CancellationToken>()).Returns(board);
 
         // Act.
-        bool result = await _sut.AddBoardToOrderAsync(orderId, boardId, TestContext.CancellationToken);
+        bool result = await _testObject.AddBoardToOrderAsync(orderId, boardId, TestContext.CancellationToken);
 
         // Assert.
         Assert.IsTrue(result);
@@ -263,7 +263,7 @@ public sealed class ManufacturingServiceTests
         _orderData.GetOrderByIdAsync(orderId, Arg.Any<CancellationToken>()).Returns((Order?)null);
 
         // Act.
-        bool result = await _sut.RemoveBoardFromOrderAsync(orderId, Guid.NewGuid(), TestContext.CancellationToken);
+        bool result = await _testObject.RemoveBoardFromOrderAsync(orderId, Guid.NewGuid(), TestContext.CancellationToken);
 
         // Assert.
         Assert.IsFalse(result);
@@ -285,7 +285,7 @@ public sealed class ManufacturingServiceTests
         _orderData.RemoveBoardFromOrderAsync(orderId, boardId, Arg.Any<CancellationToken>()).Returns(false);
 
         // Act.
-        bool result = await _sut.RemoveBoardFromOrderAsync(orderId, boardId, TestContext.CancellationToken);
+        bool result = await _testObject.RemoveBoardFromOrderAsync(orderId, boardId, TestContext.CancellationToken);
 
         // Assert.
         Assert.IsFalse(result);
@@ -306,7 +306,7 @@ public sealed class ManufacturingServiceTests
         _orderData.RemoveBoardFromOrderAsync(orderId, boardId, Arg.Any<CancellationToken>()).Returns(true);
 
         // Act.
-        bool result = await _sut.RemoveBoardFromOrderAsync(orderId, boardId, TestContext.CancellationToken);
+        bool result = await _testObject.RemoveBoardFromOrderAsync(orderId, boardId, TestContext.CancellationToken);
 
         // Assert.
         Assert.IsTrue(result);
@@ -329,7 +329,7 @@ public sealed class ManufacturingServiceTests
         _boardData.GetBoardByIdAsync(boardId, Arg.Any<CancellationToken>()).Returns((Board?)null);
 
         // Act.
-        bool result = await _sut.AddComponentToBoardAsync(boardId, Guid.NewGuid(), 3, TestContext.CancellationToken);
+        bool result = await _testObject.AddComponentToBoardAsync(boardId, Guid.NewGuid(), 3, TestContext.CancellationToken);
 
         // Assert.
         Assert.IsFalse(result);
@@ -351,7 +351,7 @@ public sealed class ManufacturingServiceTests
         _componentData.GetComponentByIdAsync(componentId, Arg.Any<CancellationToken>()).Returns((Component?)null);
 
         // Act.
-        bool result = await _sut.AddComponentToBoardAsync(boardId, componentId, 3, TestContext.CancellationToken);
+        bool result = await _testObject.AddComponentToBoardAsync(boardId, componentId, 3, TestContext.CancellationToken);
 
         // Assert.
         Assert.IsFalse(result);
@@ -374,11 +374,135 @@ public sealed class ManufacturingServiceTests
         _componentData.GetComponentByIdAsync(componentId, Arg.Any<CancellationToken>()).Returns(component);
 
         // Act.
-        bool result = await _sut.AddComponentToBoardAsync(boardId, componentId, 5, TestContext.CancellationToken);
+        bool result = await _testObject.AddComponentToBoardAsync(boardId, componentId, 5, TestContext.CancellationToken);
 
         // Assert.
         Assert.IsTrue(result);
         await _boardData.Received(1).AddComponentToBoardAsync(boardId, componentId, 5, Arg.Any<CancellationToken>());
+    }
+
+    #endregion
+
+    #region DeleteBoardAsync
+
+    /// <summary>
+    /// Returns <see langword="false"/> and does not call the data port when the board does not exist.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
+    [TestMethod]
+    public async Task WhenDeleteBoardAsyncAndBoardNotFound_ThenFalseIsReturned()
+    {
+        // Arrange.
+        Guid id = Guid.NewGuid();
+        _boardData.GetBoardByIdAsync(id, Arg.Any<CancellationToken>()).Returns((Board?)null);
+
+        // Act.
+        bool result = await _testObject.DeleteBoardAsync(id, TestContext.CancellationToken);
+
+        // Assert.
+        Assert.IsFalse(result);
+        await _boardData.DidNotReceive().DeleteBoardAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>
+    /// Throws <see cref="InvalidOperationException"/> and does not delete when the board is still assigned to an order.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
+    [TestMethod]
+    public async Task WhenDeleteBoardAsyncAndBoardIsAssignedToOrder_ThenInvalidOperationExceptionIsThrown()
+    {
+        // Arrange.
+        Guid id = Guid.NewGuid();
+        Board board = new(id, "B", "D", 100m, 50m);
+        _boardData.GetBoardByIdAsync(id, Arg.Any<CancellationToken>()).Returns(board);
+        _boardData.IsBoardAssignedToAnyOrderAsync(id, Arg.Any<CancellationToken>()).Returns(true);
+
+        // Act & Assert.
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => _testObject.DeleteBoardAsync(id, TestContext.CancellationToken));
+        await _boardData.DidNotReceive().DeleteBoardAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>
+    /// Deletes the board and returns <see langword="true"/> when the board exists and is not assigned to any order.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
+    [TestMethod]
+    public async Task WhenDeleteBoardAsyncAndBoardExistsAndNotAssigned_ThenBoardIsDeletedAndTrueIsReturned()
+    {
+        // Arrange.
+        Guid id = Guid.NewGuid();
+        Board board = new(id, "B", "D", 100m, 50m);
+        _boardData.GetBoardByIdAsync(id, Arg.Any<CancellationToken>()).Returns(board);
+        _boardData.IsBoardAssignedToAnyOrderAsync(id, Arg.Any<CancellationToken>()).Returns(false);
+
+        // Act.
+        bool result = await _testObject.DeleteBoardAsync(id, TestContext.CancellationToken);
+
+        // Assert.
+        Assert.IsTrue(result);
+        await _boardData.Received(1).DeleteBoardAsync(id, Arg.Any<CancellationToken>());
+    }
+
+    #endregion
+
+    #region DeleteComponentAsync
+
+    /// <summary>
+    /// Returns <see langword="false"/> and does not call the data port when the component does not exist.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
+    [TestMethod]
+    public async Task WhenDeleteComponentAsyncAndComponentNotFound_ThenFalseIsReturned()
+    {
+        // Arrange.
+        Guid id = Guid.NewGuid();
+        _componentData.GetComponentByIdAsync(id, Arg.Any<CancellationToken>()).Returns((Component?)null);
+
+        // Act.
+        bool result = await _testObject.DeleteComponentAsync(id, TestContext.CancellationToken);
+
+        // Assert.
+        Assert.IsFalse(result);
+        await _componentData.DidNotReceive().DeleteComponentAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>
+    /// Throws <see cref="InvalidOperationException"/> and does not delete when the component is still assigned to a board.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
+    [TestMethod]
+    public async Task WhenDeleteComponentAsyncAndComponentIsAssignedToBoard_ThenInvalidOperationExceptionIsThrown()
+    {
+        // Arrange.
+        Guid id = Guid.NewGuid();
+        Component component = new(id, "C", "D", 10);
+        _componentData.GetComponentByIdAsync(id, Arg.Any<CancellationToken>()).Returns(component);
+        _componentData.IsComponentAssignedToAnyBoardAsync(id, Arg.Any<CancellationToken>()).Returns(true);
+
+        // Act & Assert.
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => _testObject.DeleteComponentAsync(id, TestContext.CancellationToken));
+        await _componentData.DidNotReceive().DeleteComponentAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>
+    /// Deletes the component and returns <see langword="true"/> when the component exists and is not assigned to any board.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
+    [TestMethod]
+    public async Task WhenDeleteComponentAsyncAndComponentExistsAndNotAssigned_ThenComponentIsDeletedAndTrueIsReturned()
+    {
+        // Arrange.
+        Guid id = Guid.NewGuid();
+        Component component = new(id, "C", "D", 10);
+        _componentData.GetComponentByIdAsync(id, Arg.Any<CancellationToken>()).Returns(component);
+        _componentData.IsComponentAssignedToAnyBoardAsync(id, Arg.Any<CancellationToken>()).Returns(false);
+
+        // Act.
+        bool result = await _testObject.DeleteComponentAsync(id, TestContext.CancellationToken);
+
+        // Assert.
+        Assert.IsTrue(result);
+        await _componentData.Received(1).DeleteComponentAsync(id, Arg.Any<CancellationToken>());
     }
 
     #endregion
@@ -397,7 +521,7 @@ public sealed class ManufacturingServiceTests
         _orderData.GetOrderByIdAsync(id, Arg.Any<CancellationToken>()).Returns((Order?)null);
 
         // Act.
-        Order? result = await _sut.UpdateOrderAsync(id, new UpdateOrderRequest("New", "Desc"), TestContext.CancellationToken);
+        Order? result = await _testObject.UpdateOrderAsync(id, new UpdateOrderRequest("New", "Desc"), TestContext.CancellationToken);
 
         // Assert.
         Assert.IsNull(result);
@@ -417,7 +541,7 @@ public sealed class ManufacturingServiceTests
         _orderData.GetOrderByIdAsync(id, Arg.Any<CancellationToken>()).Returns(existing);
 
         // Act.
-        Order? result = await _sut.UpdateOrderAsync(id, new UpdateOrderRequest("New", "NewDesc"), TestContext.CancellationToken);
+        Order? result = await _testObject.UpdateOrderAsync(id, new UpdateOrderRequest("New", "NewDesc"), TestContext.CancellationToken);
 
         // Assert.
         Assert.IsNotNull(result);

@@ -130,6 +130,7 @@ public interface IManufacturingService
     /// <see langword="true"/> if the board was deleted;
     /// <see langword="false"/> if no board with the given ID was found.
     /// </returns>
+    /// <exception cref="InvalidOperationException">Thrown when the board is still assigned to one or more orders.</exception>
     Task<bool> DeleteBoardAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -200,5 +201,6 @@ public interface IManufacturingService
     /// <see langword="true"/> if the component was deleted;
     /// <see langword="false"/> if no component with the given ID was found.
     /// </returns>
+    /// <exception cref="InvalidOperationException">Thrown when the component is still assigned to one or more boards.</exception>
     Task<bool> DeleteComponentAsync(Guid id, CancellationToken cancellationToken = default);
 }

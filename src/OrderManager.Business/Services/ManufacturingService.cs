@@ -216,6 +216,12 @@ public sealed partial class ManufacturingService : IManufacturingService
             return false;
         }
 
+        bool isAssigned = await _boardData.IsBoardAssignedToAnyOrderAsync(id, cancellationToken);
+        if (isAssigned)
+        {
+            throw new InvalidOperationException($"Board '{id}' cannot be deleted because it is still assigned to one or more orders.");
+        }
+
         await _boardData.DeleteBoardAsync(id, cancellationToken);
         LogBoardDeleted(_logger, id);
         return true;
@@ -308,6 +314,12 @@ public sealed partial class ManufacturingService : IManufacturingService
         if (existing is null)
         {
             return false;
+        }
+
+        bool isAssigned = await _componentData.IsComponentAssignedToAnyBoardAsync(id, cancellationToken);
+        if (isAssigned)
+        {
+            throw new InvalidOperationException($"Component '{id}' cannot be deleted because it is still assigned to one or more boards.");
         }
 
         await _componentData.DeleteComponentAsync(id, cancellationToken);
