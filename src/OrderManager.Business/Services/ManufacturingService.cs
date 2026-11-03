@@ -62,7 +62,12 @@ public sealed partial class ManufacturingService : IManufacturingService
 
     #region Orders
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Creates a new order from the given request data.
+    /// </summary>
+    /// <param name="request">The data for the new order.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The newly created <see cref="Order"/>.</returns>
     public async Task<Order> CreateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -72,49 +77,88 @@ public sealed partial class ManufacturingService : IManufacturingService
         return order;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets the order with the given ID, or <see langword="null"/> if not found.
+    /// </summary>
+    /// <param name="id">The ID of the order to retrieve.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The matching <see cref="Order"/>, or <see langword="null"/> if not found.</returns>
     public async Task<Order?> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _orderData.GetOrderByIdAsync(id, cancellationToken);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets all orders.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>An enumerable of all <see cref="Order"/> instances.</returns>
     public async Task<IEnumerable<Order>> GetAllOrdersAsync(CancellationToken cancellationToken = default)
     {
         return await _orderData.GetAllOrdersAsync(cancellationToken);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Updates the order with the given ID using the provided request data.
+    /// </summary>
+    /// <param name="id">The ID of the order to update.</param>
+    /// <param name="request">The updated data for the order.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The updated <see cref="Order"/>, or <see langword="null"/> if no order with the given ID exists.</returns>
     public async Task<Order?> UpdateOrderAsync(Guid id, UpdateOrderRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        Order? result;
         Order? existing = await _orderData.GetOrderByIdAsync(id, cancellationToken);
         if (existing is null)
         {
-            return null;
+            result = null;
+        }
+        else
+        {
+            Order updated = existing with { Name = request.Name, Description = request.Description };
+            await _orderData.UpdateOrderAsync(updated, cancellationToken);
+            LogOrderUpdated(_logger, id);
+            result = updated;
         }
 
-        Order updated = existing with { Name = request.Name, Description = request.Description };
-        await _orderData.UpdateOrderAsync(updated, cancellationToken);
-        LogOrderUpdated(_logger, id);
-        return updated;
+        return result;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Deletes the order with the given ID.
+    /// </summary>
+    /// <param name="id">The ID of the order to delete.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the order was deleted;
+    /// <see langword="false"/> if no order with the given ID was found.
+    /// </returns>
     public async Task<bool> DeleteOrderAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        bool result;
         Order? existing = await _orderData.GetOrderByIdAsync(id, cancellationToken);
         if (existing is null)
         {
-            return false;
+            result = false;
+        }
+        else
+        {
+            await _orderData.DeleteOrderAsync(id, cancellationToken);
+            LogOrderDeleted(_logger, id);
+            result = true;
         }
 
-        await _orderData.DeleteOrderAsync(id, cancellationToken);
-        LogOrderDeleted(_logger, id);
-        return true;
+        return result;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Exports the order with the given ID to the production line.
+    /// </summary>
+    /// <param name="id">The ID of the order to export.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown when no order with the given ID exists.</exception>
     public async Task ExportToProductionLineAsync(Guid id, CancellationToken cancellationToken = default)
     {
         Order? order = await _orderData.GetOrderWithDetailsAsync(id, cancellationToken);
@@ -127,49 +171,85 @@ public sealed partial class ManufacturingService : IManufacturingService
         LogOrderExported(_logger, id);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Adds a board to the order with the given ID.
+    /// Has no effect if the board is already part of the order.
+    /// </summary>
+    /// <param name="orderId">The ID of the order.</param>
+    /// <param name="boardId">The ID of the board to add.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the board was added;
+    /// <see langword="false"/> if the order or board was not found.
+    /// </returns>
     public async Task<bool> AddBoardToOrderAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default)
     {
+        bool result;
         Order? order = await _orderData.GetOrderByIdAsync(orderId, cancellationToken);
         if (order is null)
         {
-            return false;
+            result = false;
         }
-
-        Board? board = await _boardData.GetBoardByIdAsync(boardId, cancellationToken);
-        if (board is null)
+        else
         {
-            return false;
+            Board? board = await _boardData.GetBoardByIdAsync(boardId, cancellationToken);
+            if (board is null)
+            {
+                result = false;
+            }
+            else
+            {
+                await _orderData.AddBoardToOrderAsync(orderId, boardId, cancellationToken);
+                LogBoardAddedToOrder(_logger, boardId, orderId);
+                result = true;
+            }
         }
 
-        await _orderData.AddBoardToOrderAsync(orderId, boardId, cancellationToken);
-        LogBoardAddedToOrder(_logger, boardId, orderId);
-        return true;
+        return result;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Removes a board from the order with the given ID.
+    /// </summary>
+    /// <param name="orderId">The ID of the order.</param>
+    /// <param name="boardId">The ID of the board to remove.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the board was removed;
+    /// <see langword="false"/> if the order was not found or the board was not part of the order.
+    /// </returns>
     public async Task<bool> RemoveBoardFromOrderAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default)
     {
+        bool result;
         Order? order = await _orderData.GetOrderByIdAsync(orderId, cancellationToken);
         if (order is null)
         {
-            return false;
+            result = false;
         }
-
-        bool removed = await _orderData.RemoveBoardFromOrderAsync(orderId, boardId, cancellationToken);
-        if (removed)
+        else
         {
-            LogBoardRemovedFromOrder(_logger, boardId, orderId);
+            bool removed = await _orderData.RemoveBoardFromOrderAsync(orderId, boardId, cancellationToken);
+            if (removed)
+            {
+                LogBoardRemovedFromOrder(_logger, boardId, orderId);
+            }
+
+            result = removed;
         }
 
-        return removed;
+        return result;
     }
 
     #endregion
 
     #region Boards
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Creates a new board from the given request data.
+    /// </summary>
+    /// <param name="request">The data for the new board.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The newly created <see cref="Board"/>.</returns>
     public async Task<Board> CreateBoardAsync(CreateBoardRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -179,97 +259,167 @@ public sealed partial class ManufacturingService : IManufacturingService
         return board;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets the board with the given ID, or <see langword="null"/> if not found.
+    /// </summary>
+    /// <param name="id">The ID of the board to retrieve.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The matching <see cref="Board"/>, or <see langword="null"/> if not found.</returns>
     public async Task<Board?> GetBoardByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _boardData.GetBoardByIdAsync(id, cancellationToken);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets all boards.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>An enumerable of all <see cref="Board"/> instances.</returns>
     public async Task<IEnumerable<Board>> GetAllBoardsAsync(CancellationToken cancellationToken = default)
     {
         return await _boardData.GetAllBoardsAsync(cancellationToken);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Updates the board with the given ID using the provided request data.
+    /// </summary>
+    /// <param name="id">The ID of the board to update.</param>
+    /// <param name="request">The updated data for the board.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The updated <see cref="Board"/>, or <see langword="null"/> if no board with the given ID exists.</returns>
     public async Task<Board?> UpdateBoardAsync(Guid id, UpdateBoardRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        Board? result;
         Board? existing = await _boardData.GetBoardByIdAsync(id, cancellationToken);
         if (existing is null)
         {
-            return null;
+            result = null;
+        }
+        else
+        {
+            Board updated = existing with { Name = request.Name, Description = request.Description, Length = request.Length, Width = request.Width };
+            await _boardData.UpdateBoardAsync(updated, cancellationToken);
+            LogBoardUpdated(_logger, id);
+            result = updated;
         }
 
-        Board updated = existing with { Name = request.Name, Description = request.Description, Length = request.Length, Width = request.Width };
-        await _boardData.UpdateBoardAsync(updated, cancellationToken);
-        LogBoardUpdated(_logger, id);
-        return updated;
+        return result;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Deletes the board with the given ID.
+    /// </summary>
+    /// <param name="id">The ID of the board to delete.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the board was deleted;
+    /// <see langword="false"/> if no board with the given ID was found.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">Thrown when the board is still assigned to one or more orders.</exception>
     public async Task<bool> DeleteBoardAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        bool result;
         Board? existing = await _boardData.GetBoardByIdAsync(id, cancellationToken);
         if (existing is null)
         {
-            return false;
+            result = false;
         }
-
-        bool isAssigned = await _boardData.IsBoardAssignedToAnyOrderAsync(id, cancellationToken);
-        if (isAssigned)
+        else
         {
-            throw new InvalidOperationException($"Board '{id}' cannot be deleted because it is still assigned to one or more orders.");
+            bool isAssigned = await _boardData.IsBoardAssignedToAnyOrderAsync(id, cancellationToken);
+            if (isAssigned)
+            {
+                throw new InvalidOperationException($"Board '{id}' cannot be deleted because it is still assigned to one or more orders.");
+            }
+
+            await _boardData.DeleteBoardAsync(id, cancellationToken);
+            LogBoardDeleted(_logger, id);
+            result = true;
         }
 
-        await _boardData.DeleteBoardAsync(id, cancellationToken);
-        LogBoardDeleted(_logger, id);
-        return true;
+        return result;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Adds a component to the board with the given ID, or updates its quantity if already present.
+    /// </summary>
+    /// <param name="boardId">The ID of the board.</param>
+    /// <param name="componentId">The ID of the component to add.</param>
+    /// <param name="quantityPerBoard">The number of this component required per board.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the component was added or updated;
+    /// <see langword="false"/> if the board or component was not found.
+    /// </returns>
     public async Task<bool> AddComponentToBoardAsync(Guid boardId, Guid componentId, int quantityPerBoard, CancellationToken cancellationToken = default)
     {
+        bool result;
         Board? board = await _boardData.GetBoardByIdAsync(boardId, cancellationToken);
         if (board is null)
         {
-            return false;
+            result = false;
         }
-
-        Component? component = await _componentData.GetComponentByIdAsync(componentId, cancellationToken);
-        if (component is null)
+        else
         {
-            return false;
+            Component? component = await _componentData.GetComponentByIdAsync(componentId, cancellationToken);
+            if (component is null)
+            {
+                result = false;
+            }
+            else
+            {
+                await _boardData.AddComponentToBoardAsync(boardId, componentId, quantityPerBoard, cancellationToken);
+                LogComponentAddedToBoard(_logger, componentId, boardId);
+                result = true;
+            }
         }
 
-        await _boardData.AddComponentToBoardAsync(boardId, componentId, quantityPerBoard, cancellationToken);
-        LogComponentAddedToBoard(_logger, componentId, boardId);
-        return true;
+        return result;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Removes a component from the board with the given ID.
+    /// </summary>
+    /// <param name="boardId">The ID of the board.</param>
+    /// <param name="componentId">The ID of the component to remove.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the component was removed;
+    /// <see langword="false"/> if the board was not found or the component was not part of the board.
+    /// </returns>
     public async Task<bool> RemoveComponentFromBoardAsync(Guid boardId, Guid componentId, CancellationToken cancellationToken = default)
     {
+        bool result;
         Board? board = await _boardData.GetBoardByIdAsync(boardId, cancellationToken);
         if (board is null)
         {
-            return false;
+            result = false;
         }
-
-        bool removed = await _boardData.RemoveComponentFromBoardAsync(boardId, componentId, cancellationToken);
-        if (removed)
+        else
         {
-            LogComponentRemovedFromBoard(_logger, componentId, boardId);
+            bool removed = await _boardData.RemoveComponentFromBoardAsync(boardId, componentId, cancellationToken);
+            if (removed)
+            {
+                LogComponentRemovedFromBoard(_logger, componentId, boardId);
+            }
+
+            result = removed;
         }
 
-        return removed;
+        return result;
     }
 
     #endregion
 
     #region Components
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Creates a new component from the given request data.
+    /// </summary>
+    /// <param name="request">The data for the new component.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The newly created <see cref="Component"/>.</returns>
     public async Task<Component> CreateComponentAsync(CreateComponentRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -279,52 +429,86 @@ public sealed partial class ManufacturingService : IManufacturingService
         return component;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets the component with the given ID, or <see langword="null"/> if not found.
+    /// </summary>
+    /// <param name="id">The ID of the component to retrieve.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The matching <see cref="Component"/>, or <see langword="null"/> if not found.</returns>
     public async Task<Component?> GetComponentByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _componentData.GetComponentByIdAsync(id, cancellationToken);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets all components.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>An enumerable of all <see cref="Component"/> instances.</returns>
     public async Task<IEnumerable<Component>> GetAllComponentsAsync(CancellationToken cancellationToken = default)
     {
         return await _componentData.GetAllComponentsAsync(cancellationToken);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Updates the component with the given ID using the provided request data.
+    /// </summary>
+    /// <param name="id">The ID of the component to update.</param>
+    /// <param name="request">The updated data for the component.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The updated <see cref="Component"/>, or <see langword="null"/> if no component with the given ID exists.</returns>
     public async Task<Component?> UpdateComponentAsync(Guid id, UpdateComponentRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        Component? result;
         Component? existing = await _componentData.GetComponentByIdAsync(id, cancellationToken);
         if (existing is null)
         {
-            return null;
+            result = null;
+        }
+        else
+        {
+            Component updated = existing with { Name = request.Name, Description = request.Description, Quantity = request.Quantity };
+            await _componentData.UpdateComponentAsync(updated, cancellationToken);
+            LogComponentUpdated(_logger, id);
+            result = updated;
         }
 
-        Component updated = existing with { Name = request.Name, Description = request.Description, Quantity = request.Quantity };
-        await _componentData.UpdateComponentAsync(updated, cancellationToken);
-        LogComponentUpdated(_logger, id);
-        return updated;
+        return result;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Deletes the component with the given ID.
+    /// </summary>
+    /// <param name="id">The ID of the component to delete.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the component was deleted;
+    /// <see langword="false"/> if no component with the given ID was found.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">Thrown when the component is still assigned to one or more boards.</exception>
     public async Task<bool> DeleteComponentAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        bool result;
         Component? existing = await _componentData.GetComponentByIdAsync(id, cancellationToken);
         if (existing is null)
         {
-            return false;
+            result = false;
         }
-
-        bool isAssigned = await _componentData.IsComponentAssignedToAnyBoardAsync(id, cancellationToken);
-        if (isAssigned)
+        else
         {
-            throw new InvalidOperationException($"Component '{id}' cannot be deleted because it is still assigned to one or more boards.");
+            bool isAssigned = await _componentData.IsComponentAssignedToAnyBoardAsync(id, cancellationToken);
+            if (isAssigned)
+            {
+                throw new InvalidOperationException($"Component '{id}' cannot be deleted because it is still assigned to one or more boards.");
+            }
+
+            await _componentData.DeleteComponentAsync(id, cancellationToken);
+            LogComponentDeleted(_logger, id);
+            result = true;
         }
 
-        await _componentData.DeleteComponentAsync(id, cancellationToken);
-        LogComponentDeleted(_logger, id);
-        return true;
+        return result;
     }
 
     #endregion
