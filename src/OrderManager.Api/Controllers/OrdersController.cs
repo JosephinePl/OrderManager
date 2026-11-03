@@ -121,18 +121,8 @@ public sealed class OrdersController : ControllerBase
     [HttpPost("{id:guid}/export")]
     public async Task<IActionResult> Export(Guid id, CancellationToken cancellationToken)
     {
-        IActionResult result;
-        try
-        {
-            await _service.ExportToProductionLineAsync(id, cancellationToken);
-            result = NoContent();
-        }
-        catch (KeyNotFoundException)
-        {
-            result = NotFound();
-        }
-
-        return result;
+        await _service.ExportToProductionLineAsync(id, cancellationToken);
+        return NoContent();
     }
 
     #endregion

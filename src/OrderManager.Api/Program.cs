@@ -21,7 +21,7 @@ builder.Services.AddScoped<IBoardDataPort>(sp => sp.GetRequiredService<EfCoreDat
 builder.Services.AddScoped<IComponentDataPort>(sp => sp.GetRequiredService<EfCoreDataAdapter>());
 builder.Services.AddScoped<IManufacturingService, ManufacturingService>();
 
-    builder.Services.AddSingleton<IProductionLineExporter, SimulatedFileExportAdapter>();
+builder.Services.AddSingleton<IProductionLineExporter, SimulatedFileExportAdapter>();
 
 WebApplication app = builder.Build();
 
@@ -35,6 +35,21 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
+
+app.UseExceptionHandler("/error");
+
+app.MapGet("/error", (HttpContext ctx) =>
+{
+    Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature? ex =
+        ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+
+    return ex?.Error switch
+    {
+        KeyNotFoundException => Results.Problem(statusCode: StatusCodes.Status404NotFound),
+        ArgumentException e => Results.Problem(detail: e.Message, statusCode: StatusCodes.Status400BadRequest),
+        _ => Results.Problem(statusCode: StatusCodes.Status500InternalServerError),
+    };
+}).ExcludeFromDescription();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
