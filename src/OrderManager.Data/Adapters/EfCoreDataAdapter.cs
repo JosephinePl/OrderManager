@@ -238,6 +238,28 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     }
 
     /// <summary>
+    /// Returns <see langword="true"/> when the board with the given ID is associated with at least one order.
+    /// </summary>
+    /// <param name="boardId">The ID of the board to check.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns><see langword="true"/> if at least one order references this board; otherwise <see langword="false"/>.</returns>
+    public async Task<bool> IsBoardAssignedToAnyOrderAsync(Guid boardId, CancellationToken cancellationToken = default)
+    {
+        return await _context.OrderBoards.AnyAsync(ob => ob.BoardId == boardId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Returns <see langword="true"/> when the component with the given ID is associated with at least one board.
+    /// </summary>
+    /// <param name="componentId">The ID of the component to check.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns><see langword="true"/> if at least one board references this component; otherwise <see langword="false"/>.</returns>
+    public async Task<bool> IsComponentAssignedToAnyBoardAsync(Guid componentId, CancellationToken cancellationToken = default)
+    {
+        return await _context.BoardComponents.AnyAsync(bc => bc.ComponentId == componentId, cancellationToken);
+    }
+
+    /// <summary>
     /// Adds a board association to the order with the given ID.
     /// Has no effect if the association already exists.
     /// </summary>
