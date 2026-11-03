@@ -269,15 +269,15 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task AddBoardToOrderAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default)
     {
-        bool exists = await _context.OrderBoards
-            .AnyAsync(ob => ob.OrderId == orderId && ob.BoardId == boardId, cancellationToken);
-        if (!exists)
+        try
         {
-            Order order = (await _context.Orders.FindAsync(new object[] { orderId }, cancellationToken))!;
-            Board board = (await _context.Boards.FindAsync(new object[] { boardId }, cancellationToken))!;
-            OrderBoard orderBoard = new OrderBoard(orderId, order, boardId, board);
-            await _context.OrderBoards.AddAsync(orderBoard, cancellationToken);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"""INSERT INTO "OrderBoards" ("OrderId", "BoardId") VALUES ({orderId}, {boardId}) ON CONFLICT DO NOTHING""",
+                cancellationToken);
+        }
+        catch (Npgsql.PostgresException ex) when (ex.SqlState is "23503")
+        {
+            // Order or board deleted concurrently — caller already verified both exist; treat as no-op.
         }
     }
 
@@ -290,21 +290,10 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     /// <returns><see langword="true"/> if the association was removed; <see langword="false"/> if it did not exist.</returns>
     public async Task<bool> RemoveBoardFromOrderAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default)
     {
-        OrderBoard? existing = await _context.OrderBoards
-            .FindAsync(new object[] { orderId, boardId }, cancellationToken);
-        bool result;
-        if (existing is not null)
-        {
-            _context.OrderBoards.Remove(existing);
-            await _context.SaveChangesAsync(cancellationToken);
-            result = true;
-        }
-        else
-        {
-            result = false;
-        }
-
-        return result;
+        int rows = await _context.Database.ExecuteSqlInterpolatedAsync(
+            $"""DELETE FROM "OrderBoards" WHERE "OrderId" = {orderId} AND "BoardId" = {boardId}""",
+            cancellationToken);
+        return rows > 0;
     }
 
     /// <summary>
@@ -317,18 +306,20 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task AddComponentToBoardAsync(Guid boardId, Guid componentId, int quantityPerBoard, CancellationToken cancellationToken = default)
     {
-        BoardComponent? existing = await _context.BoardComponents
-            .FindAsync(new object[] { boardId, componentId }, cancellationToken);
-        if (existing is not null)
+        try
         {
-            _context.BoardComponents.Remove(existing);
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"""
+                INSERT INTO "BoardComponents" ("BoardId", "ComponentId", "QuantityPerBoard")
+                VALUES ({boardId}, {componentId}, {quantityPerBoard})
+                ON CONFLICT ("BoardId", "ComponentId") DO UPDATE SET "QuantityPerBoard" = EXCLUDED."QuantityPerBoard"
+                """,
+                cancellationToken);
         }
-
-        Board board = (await _context.Boards.FindAsync(new object[] { boardId }, cancellationToken))!;
-        Component component = (await _context.Components.FindAsync(new object[] { componentId }, cancellationToken))!;
-        BoardComponent boardComponent = new BoardComponent(boardId, board, componentId, component, quantityPerBoard);
-        await _context.BoardComponents.AddAsync(boardComponent, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        catch (Npgsql.PostgresException ex) when (ex.SqlState is "23503")
+        {
+            // Board or component deleted concurrently — caller already verified both exist; treat as no-op.
+        }
     }
 
     /// <summary>
@@ -340,21 +331,10 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     /// <returns><see langword="true"/> if the association was removed; <see langword="false"/> if it did not exist.</returns>
     public async Task<bool> RemoveComponentFromBoardAsync(Guid boardId, Guid componentId, CancellationToken cancellationToken = default)
     {
-        BoardComponent? existing = await _context.BoardComponents
-            .FindAsync(new object[] { boardId, componentId }, cancellationToken);
-        bool result;
-        if (existing is not null)
-        {
-            _context.BoardComponents.Remove(existing);
-            await _context.SaveChangesAsync(cancellationToken);
-            result = true;
-        }
-        else
-        {
-            result = false;
-        }
-
-        return result;
+        int rows = await _context.Database.ExecuteSqlInterpolatedAsync(
+            $"""DELETE FROM "BoardComponents" WHERE "BoardId" = {boardId} AND "ComponentId" = {componentId}""",
+            cancellationToken);
+        return rows > 0;
     }
 
     #endregion
@@ -371,7 +351,13 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     private async Task<T?> GetByIdAsync<T>(Guid id, CancellationToken cancellationToken)
         where T : class
     {
-        return await _context.Set<T>().FindAsync(new object[] { id }, cancellationToken);
+        T? entity = await _context.Set<T>().FindAsync(new object[] { id }, cancellationToken);
+        if (entity is not null)
+        {
+            _context.Entry(entity).State = EntityState.Detached;
+        }
+
+        return entity;
     }
 
     /// <summary>
@@ -432,7 +418,15 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
         if (entity is not null)
         {
             set.Remove(entity);
-            await _context.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Another thread deleted the same row concurrently — already gone, treat as success.
+                _context.ChangeTracker.Clear();
+            }
         }
         else
         {
