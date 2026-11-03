@@ -21,12 +21,14 @@ builder.Services.AddScoped<IBoardDataPort>(sp => sp.GetRequiredService<EfCoreDat
 builder.Services.AddScoped<IComponentDataPort>(sp => sp.GetRequiredService<EfCoreDataAdapter>());
 builder.Services.AddScoped<IManufacturingService, ManufacturingService>();
 
-if (builder.Environment.IsDevelopment())
-{
     builder.Services.AddSingleton<IProductionLineExporter, SimulatedFileExportAdapter>();
-}
 
 WebApplication app = builder.Build();
+
+using (IServiceScope scope = app.Services.CreateScope())
+{
+    await scope.ServiceProvider.GetRequiredService<OrderManagerDbContext>().Database.MigrateAsync();
+}
 
 if (app.Environment.IsDevelopment())
 {
