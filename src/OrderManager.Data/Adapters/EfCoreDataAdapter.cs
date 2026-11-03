@@ -383,7 +383,7 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     private async Task<IReadOnlyList<T>> GetAllAsync<T>(CancellationToken cancellationToken)
         where T : class
     {
-        return await _context.Set<T>().ToListAsync(cancellationToken);
+        return await _context.Set<T>().AsNoTracking().ToListAsync(cancellationToken);
     }
 
     /// <summary>
