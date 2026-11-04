@@ -110,14 +110,13 @@ public sealed class ManufacturingServiceTests
     {
         // Arrange.
         Guid id = Guid.NewGuid();
-        _orderData.GetOrderByIdAsync(id, Arg.Any<CancellationToken>()).Returns((Order?)null);
+        _orderData.DeleteOrderAsync(id, Arg.Any<CancellationToken>()).Returns(false);
 
         // Act.
         bool result = await _testObject.DeleteOrderAsync(id, TestContext.CancellationToken);
 
         // Assert.
         Assert.IsFalse(result);
-        await _orderData.DidNotReceive().DeleteOrderAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     /// <summary>
@@ -129,8 +128,7 @@ public sealed class ManufacturingServiceTests
     {
         // Arrange.
         Guid id = Guid.NewGuid();
-        Order order = new(id, "O", "D", DateTimeOffset.UtcNow);
-        _orderData.GetOrderByIdAsync(id, Arg.Any<CancellationToken>()).Returns(order);
+        _orderData.DeleteOrderAsync(id, Arg.Any<CancellationToken>()).Returns(true);
 
         // Act.
         bool result = await _testObject.DeleteOrderAsync(id, TestContext.CancellationToken);
@@ -434,6 +432,7 @@ public sealed class ManufacturingServiceTests
         Board board = new(id, "B", "D", 100m, 50m);
         _boardData.GetBoardByIdAsync(id, Arg.Any<CancellationToken>()).Returns(board);
         _boardData.IsBoardAssignedToAnyOrderAsync(id, Arg.Any<CancellationToken>()).Returns(false);
+        _boardData.DeleteBoardAsync(id, Arg.Any<CancellationToken>()).Returns(true);
 
         // Act.
         bool result = await _testObject.DeleteBoardAsync(id, TestContext.CancellationToken);
@@ -496,6 +495,7 @@ public sealed class ManufacturingServiceTests
         Component component = new(id, "C", "D", 10);
         _componentData.GetComponentByIdAsync(id, Arg.Any<CancellationToken>()).Returns(component);
         _componentData.IsComponentAssignedToAnyBoardAsync(id, Arg.Any<CancellationToken>()).Returns(false);
+        _componentData.DeleteComponentAsync(id, Arg.Any<CancellationToken>()).Returns(true);
 
         // Act.
         bool result = await _testObject.DeleteComponentAsync(id, TestContext.CancellationToken);

@@ -227,25 +227,26 @@ public sealed class EfCoreDataAdapterTests : IAsyncDisposable
         _context.ChangeTracker.Clear();
 
         // Act.
-        await _sut.DeleteOrderAsync(order.Id, TestContext.CancellationToken);
+        bool deleted = await _sut.DeleteOrderAsync(order.Id, TestContext.CancellationToken);
 
         // Assert.
+        Assert.IsTrue(deleted);
         Order? result = await _context.Orders.FindAsync(new object[] { order.Id }, TestContext.CancellationToken);
         Assert.IsNull(result);
     }
 
     /// <summary>
-    /// Logs a warning and does not throw when no entity with the given ID exists.
+    /// Returns <see langword="false"/> when no entity with the given ID exists.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [TestMethod]
-    public async Task WhenDeleteOrderAsyncAndEntityDoesNotExist_ThenWarningIsLogged()
+    public async Task WhenDeleteOrderAsyncAndEntityDoesNotExist_ThenFalseIsReturned()
     {
         // Act.
-        await _sut.DeleteOrderAsync(Guid.NewGuid(), TestContext.CancellationToken);
+        bool result = await _sut.DeleteOrderAsync(Guid.NewGuid(), TestContext.CancellationToken);
 
         // Assert.
-        _logger.ReceivedWithAnyArgs(1).Log<object>(LogLevel.Warning, default, default!, null, default!);
+        Assert.IsFalse(result);
     }
 
     #endregion

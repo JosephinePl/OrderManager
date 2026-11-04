@@ -2,6 +2,7 @@ namespace OrderManager.Business.Services;
 
 using Microsoft.Extensions.Logging;
 using OrderManager.Core.Entities;
+using OrderManager.Core.Exceptions;
 using OrderManager.Core.Ports;
 using OrderManager.Core.Requests;
 
@@ -136,20 +137,13 @@ public sealed partial class ManufacturingService : IManufacturingService
     /// </returns>
     public async Task<bool> DeleteOrderAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        bool result;
-        Order? existing = await _orderData.GetOrderByIdAsync(id, cancellationToken);
-        if (existing is null)
+        bool deleted = await _orderData.DeleteOrderAsync(id, cancellationToken);
+        if (deleted)
         {
-            result = false;
-        }
-        else
-        {
-            await _orderData.DeleteOrderAsync(id, cancellationToken);
             LogOrderDeleted(_logger, id);
-            result = true;
         }
 
-        return result;
+        return deleted;
     }
 
     /// <summary>
@@ -199,9 +193,17 @@ public sealed partial class ManufacturingService : IManufacturingService
             }
             else
             {
-                await _orderData.AddBoardToOrderAsync(orderId, boardId, cancellationToken);
-                LogBoardAddedToOrder(_logger, boardId, orderId);
-                result = true;
+                try
+                {
+                    await _orderData.AddBoardToOrderAsync(orderId, boardId, cancellationToken);
+                    LogBoardAddedToOrder(_logger, boardId, orderId);
+                    result = true;
+                }
+                catch (NotFoundException)
+                {
+                    LogBoardToOrderRaceCondition(_logger, boardId, orderId);
+                    result = false;
+                }
             }
         }
 
@@ -333,9 +335,11 @@ public sealed partial class ManufacturingService : IManufacturingService
                 throw new InvalidOperationException($"Board '{id}' cannot be deleted because it is still assigned to one or more orders.");
             }
 
-            await _boardData.DeleteBoardAsync(id, cancellationToken);
-            LogBoardDeleted(_logger, id);
-            result = true;
+            result = await _boardData.DeleteBoardAsync(id, cancellationToken);
+            if (result)
+            {
+                LogBoardDeleted(_logger, id);
+            }
         }
 
         return result;
@@ -369,9 +373,17 @@ public sealed partial class ManufacturingService : IManufacturingService
             }
             else
             {
-                await _boardData.AddComponentToBoardAsync(boardId, componentId, quantityPerBoard, cancellationToken);
-                LogComponentAddedToBoard(_logger, componentId, boardId);
-                result = true;
+                try
+                {
+                    await _boardData.AddComponentToBoardAsync(boardId, componentId, quantityPerBoard, cancellationToken);
+                    LogComponentAddedToBoard(_logger, componentId, boardId);
+                    result = true;
+                }
+                catch (NotFoundException)
+                {
+                    LogComponentToBoardRaceCondition(_logger, componentId, boardId);
+                    result = false;
+                }
             }
         }
 
@@ -503,9 +515,11 @@ public sealed partial class ManufacturingService : IManufacturingService
                 throw new InvalidOperationException($"Component '{id}' cannot be deleted because it is still assigned to one or more boards.");
             }
 
-            await _componentData.DeleteComponentAsync(id, cancellationToken);
-            LogComponentDeleted(_logger, id);
-            result = true;
+            result = await _componentData.DeleteComponentAsync(id, cancellationToken);
+            if (result)
+            {
+                LogComponentDeleted(_logger, id);
+            }
         }
 
         return result;
@@ -553,6 +567,20 @@ public sealed partial class ManufacturingService : IManufacturingService
     /// <param name="orderId">The ID of the order.</param>
     [LoggerMessage(Level = LogLevel.Information, Message = "Removed board {BoardId} from order {OrderId}.")]
     private static partial void LogBoardRemovedFromOrder(ILogger logger, Guid boardId, Guid orderId);
+
+    /// <summary>Logs a race condition where a board or order was deleted between the pre-check and the insert.</summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="boardId">The ID of the board.</param>
+    /// <param name="orderId">The ID of the order.</param>
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Board {BoardId} or order {OrderId} was deleted concurrently; add-board-to-order aborted.")]
+    private static partial void LogBoardToOrderRaceCondition(ILogger logger, Guid boardId, Guid orderId);
+
+    /// <summary>Logs a race condition where a component or board was deleted between the pre-check and the insert.</summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="componentId">The ID of the component.</param>
+    /// <param name="boardId">The ID of the board.</param>
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Component {ComponentId} or board {BoardId} was deleted concurrently; add-component-to-board aborted.")]
+    private static partial void LogComponentToBoardRaceCondition(ILogger logger, Guid componentId, Guid boardId);
 
     /// <summary>Logs the creation of a board.</summary>
     /// <param name="logger">The logger.</param>

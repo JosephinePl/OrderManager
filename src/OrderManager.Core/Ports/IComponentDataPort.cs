@@ -43,8 +43,8 @@ public interface IComponentDataPort
     /// </summary>
     /// <param name="id">The ID of the component to delete.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task DeleteComponentAsync(Guid id, CancellationToken cancellationToken = default);
+    /// <returns><see langword="true"/> if the component was deleted; <see langword="false"/> if it did not exist.</returns>
+    Task<bool> DeleteComponentAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns <see langword="true"/> when the component with the given ID is associated with at least one board.

@@ -52,8 +52,8 @@ public interface IOrderDataPort
     /// </summary>
     /// <param name="id">The ID of the order to delete.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task DeleteOrderAsync(Guid id, CancellationToken cancellationToken = default);
+    /// <returns><see langword="true"/> if the order was deleted; <see langword="false"/> if it did not exist.</returns>
+    Task<bool> DeleteOrderAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Adds a board association to the order with the given ID.

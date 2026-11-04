@@ -3,6 +3,7 @@ namespace OrderManager.Data.Adapters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OrderManager.Core.Entities;
+using OrderManager.Core.Exceptions;
 using OrderManager.Core.Ports;
 
 /// <summary>
@@ -51,25 +52,13 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
         Order? order = await _context.Orders.FindAsync(new object[] { id }, cancellationToken);
         if (order is not null)
         {
-            List<OrderBoard> orderBoards = await _context.OrderBoards
-                .Where(ob => ob.OrderId == id)
+            await _context.Entry(order)
+                .Collection(o => o.OrderBoards)
+                .Query()
                 .Include(ob => ob.Board)
-                .ToListAsync(cancellationToken);
-
-            foreach (OrderBoard orderBoard in orderBoards)
-            {
-                List<BoardComponent> boardComponents = await _context.BoardComponents
-                    .Where(bc => bc.BoardId == orderBoard.BoardId)
-                    .Include(bc => bc.Component)
-                    .ToListAsync(cancellationToken);
-
-                foreach (BoardComponent boardComponent in boardComponents)
-                {
-                    orderBoard.Board.AddComponent(boardComponent);
-                }
-
-                order.AddBoard(orderBoard);
-            }
+                    .ThenInclude(b => b.BoardComponents)
+                        .ThenInclude(bc => bc.Component)
+                .LoadAsync(cancellationToken);
         }
 
         return order;
@@ -123,10 +112,10 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     /// </summary>
     /// <param name="id">The ID of the order to delete.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task DeleteOrderAsync(Guid id, CancellationToken cancellationToken = default)
+    /// <returns><see langword="true"/> if the order was deleted; <see langword="false"/> if it did not exist.</returns>
+    public async Task<bool> DeleteOrderAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await DeleteAsync(_context.Orders, id, cancellationToken);
+        return await DeleteAsync(_context.Orders, id, cancellationToken);
     }
 
     /// <summary>
@@ -177,10 +166,10 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     /// </summary>
     /// <param name="id">The ID of the board to delete.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task DeleteBoardAsync(Guid id, CancellationToken cancellationToken = default)
+    /// <returns><see langword="true"/> if the board was deleted; <see langword="false"/> if it did not exist.</returns>
+    public async Task<bool> DeleteBoardAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await DeleteAsync(_context.Boards, id, cancellationToken);
+        return await DeleteAsync(_context.Boards, id, cancellationToken);
     }
 
     /// <summary>
@@ -231,10 +220,10 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     /// </summary>
     /// <param name="id">The ID of the component to delete.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task DeleteComponentAsync(Guid id, CancellationToken cancellationToken = default)
+    /// <returns><see langword="true"/> if the component was deleted; <see langword="false"/> if it did not exist.</returns>
+    public async Task<bool> DeleteComponentAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await DeleteAsync(_context.Components, id, cancellationToken);
+        return await DeleteAsync(_context.Components, id, cancellationToken);
     }
 
     /// <summary>
@@ -272,12 +261,17 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
         try
         {
             await _context.Database.ExecuteSqlInterpolatedAsync(
-                $"""INSERT INTO "OrderBoards" ("OrderId", "BoardId") VALUES ({orderId}, {boardId}) ON CONFLICT DO NOTHING""",
+                $"""INSERT INTO "OrderBoards" ("OrderId", "BoardId") VALUES ({orderId}, {boardId})""",
                 cancellationToken);
         }
         catch (Npgsql.PostgresException ex) when (ex.SqlState is "23503")
         {
-            // Order or board deleted concurrently — caller already verified both exist; treat as no-op.
+            _logger.LogWarning(ex, "FK violation adding board {BoardId} to order {OrderId}; one of the entities no longer exists.", boardId, orderId);
+            throw new NotFoundException($"Order {orderId} or board {boardId} no longer exists.");
+        }
+        catch (Npgsql.PostgresException ex) when (ex.SqlState is "23505")
+        {
+            // concurrent duplicate insert — Postgres can surface this under high concurrency
         }
     }
 
@@ -318,7 +312,8 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
         }
         catch (Npgsql.PostgresException ex) when (ex.SqlState is "23503")
         {
-            // Board or component deleted concurrently — caller already verified both exist; treat as no-op.
+            _logger.LogWarning(ex, "FK violation adding component {ComponentId} to board {BoardId}; one of the entities no longer exists.", componentId, boardId);
+            throw new NotFoundException($"Board {boardId} or component {componentId} no longer exists.");
         }
     }
 
@@ -403,35 +398,33 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     }
 
     /// <summary>
-    /// Removes the entity with the given ID from the set and saves changes.
-    /// Logs a warning if no entity with that ID exists.
+    /// Removes the entity with the given ID and saves changes.
     /// </summary>
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="set">The DbSet to search and remove from.</param>
     /// <param name="id">The ID of the entity to remove.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    private async Task DeleteAsync<T>(DbSet<T> set, Guid id, CancellationToken cancellationToken)
+    /// <returns><see langword="true"/> if the entity was deleted; <see langword="false"/> if it did not exist.</returns>
+    private async Task<bool> DeleteAsync<T>(DbSet<T> set, Guid id, CancellationToken cancellationToken)
         where T : class
     {
         T? entity = await set.FindAsync(new object[] { id }, cancellationToken);
-        if (entity is not null)
+        if (entity is null)
         {
-            set.Remove(entity);
-            try
-            {
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                // Another thread deleted the same row concurrently — already gone, treat as success.
-                _context.ChangeTracker.Clear();
-            }
+            return false;
         }
-        else
+
+        set.Remove(entity);
+        try
         {
-            _logger.LogWarning("Attempted to delete {EntityType} with ID {Id}, but it was not found.", typeof(T).Name, id);
+            await _context.SaveChangesAsync(cancellationToken);
         }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Another thread deleted the same row concurrently — the entity is gone either way.
+        }
+
+        return true;
     }
 
     #endregion

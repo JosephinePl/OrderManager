@@ -43,8 +43,8 @@ public interface IBoardDataPort
     /// </summary>
     /// <param name="id">The ID of the board to delete.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task DeleteBoardAsync(Guid id, CancellationToken cancellationToken = default);
+    /// <returns><see langword="true"/> if the board was deleted; <see langword="false"/> if it did not exist.</returns>
+    Task<bool> DeleteBoardAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns <see langword="true"/> when the board with the given ID is associated with at least one order.
