@@ -74,13 +74,20 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     }
 
     /// <summary>
-    /// Gets all orders.
+    /// Gets all orders, optionally filtered by a case-insensitive name substring.
     /// </summary>
+    /// <param name="nameFilter">When non-null and non-empty, only orders whose name contains this value are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A read-only list of all orders.</returns>
-    public async Task<IReadOnlyList<Order>> GetAllOrdersAsync(CancellationToken cancellationToken = default)
+    /// <returns>A read-only list of matching orders.</returns>
+    public async Task<IReadOnlyList<Order>> GetAllOrdersAsync(string? nameFilter = null, CancellationToken cancellationToken = default)
     {
-        return await GetAllAsync<Order>(cancellationToken);
+        IQueryable<Order> query = _context.Orders.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(nameFilter))
+        {
+            query = query.Where(o => EF.Functions.ILike(o.Name, $"%{nameFilter}%"));
+        }
+
+        return await query.ToListAsync(cancellationToken);
     }
 
     /// <summary>
@@ -150,13 +157,20 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     }
 
     /// <summary>
-    /// Gets all boards.
+    /// Gets all boards, optionally filtered by a case-insensitive name substring.
     /// </summary>
+    /// <param name="nameFilter">When non-null and non-empty, only boards whose name contains this value are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A read-only list of all boards.</returns>
-    public async Task<IReadOnlyList<Board>> GetAllBoardsAsync(CancellationToken cancellationToken = default)
+    /// <returns>A read-only list of matching boards.</returns>
+    public async Task<IReadOnlyList<Board>> GetAllBoardsAsync(string? nameFilter = null, CancellationToken cancellationToken = default)
     {
-        return await GetAllAsync<Board>(cancellationToken);
+        IQueryable<Board> query = _context.Boards.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(nameFilter))
+        {
+            query = query.Where(b => EF.Functions.ILike(b.Name, $"%{nameFilter}%"));
+        }
+
+        return await query.ToListAsync(cancellationToken);
     }
 
     /// <summary>
@@ -204,13 +218,20 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     }
 
     /// <summary>
-    /// Gets all components.
+    /// Gets all components, optionally filtered by a case-insensitive name substring.
     /// </summary>
+    /// <param name="nameFilter">When non-null and non-empty, only components whose name contains this value are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A read-only list of all components.</returns>
-    public async Task<IReadOnlyList<Component>> GetAllComponentsAsync(CancellationToken cancellationToken = default)
+    /// <returns>A read-only list of matching components.</returns>
+    public async Task<IReadOnlyList<Component>> GetAllComponentsAsync(string? nameFilter = null, CancellationToken cancellationToken = default)
     {
-        return await GetAllAsync<Component>(cancellationToken);
+        IQueryable<Component> query = _context.Components.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(nameFilter))
+        {
+            query = query.Where(c => EF.Functions.ILike(c.Name, $"%{nameFilter}%"));
+        }
+
+        return await query.ToListAsync(cancellationToken);
     }
 
     /// <summary>

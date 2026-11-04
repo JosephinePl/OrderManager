@@ -16,11 +16,12 @@ public interface IComponentDataPort
     Task<Component?> GetComponentByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all components.
+    /// Gets all components, optionally filtered by a case-insensitive name substring.
     /// </summary>
+    /// <param name="nameFilter">When non-null and non-empty, only components whose name contains this value are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A read-only list of all components.</returns>
-    Task<IReadOnlyList<Component>> GetAllComponentsAsync(CancellationToken cancellationToken = default);
+    /// <returns>A read-only list of matching components.</returns>
+    Task<IReadOnlyList<Component>> GetAllComponentsAsync(string? nameFilter = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Adds a new component.

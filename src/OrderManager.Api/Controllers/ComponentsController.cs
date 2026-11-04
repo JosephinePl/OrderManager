@@ -35,13 +35,14 @@ public sealed class ComponentsController : ControllerBase
 
     #region Public Methods
 
-    /// <summary>Returns all components.</summary>
+    /// <summary>Returns all components, optionally filtered by name substring.</summary>
+    /// <param name="name">When provided, only components whose name contains this value (case-insensitive) are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>An <see cref="IActionResult"/> containing all components.</returns>
+    /// <returns>An <see cref="IActionResult"/> containing matching components.</returns>
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll([FromQuery] string? name, CancellationToken cancellationToken)
     {
-        IEnumerable<Component> components = await _service.GetAllComponentsAsync(cancellationToken);
+        IEnumerable<Component> components = await _service.GetAllComponentsAsync(name, cancellationToken);
         return Ok(components);
     }
 

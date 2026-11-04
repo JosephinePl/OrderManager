@@ -25,11 +25,12 @@ public interface IBoardDataPort
     Task<Board?> GetBoardByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all boards.
+    /// Gets all boards, optionally filtered by a case-insensitive name substring.
     /// </summary>
+    /// <param name="nameFilter">When non-null and non-empty, only boards whose name contains this value are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A read-only list of all boards.</returns>
-    Task<IReadOnlyList<Board>> GetAllBoardsAsync(CancellationToken cancellationToken = default);
+    /// <returns>A read-only list of matching boards.</returns>
+    Task<IReadOnlyList<Board>> GetAllBoardsAsync(string? nameFilter = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Adds a new board.

@@ -119,7 +119,7 @@ public sealed class EfCoreDataAdapterTests : IAsyncDisposable
         await _context.SaveChangesAsync(TestContext.CancellationToken);
 
         // Act.
-        IReadOnlyList<Order> result = await _sut.GetAllOrdersAsync(TestContext.CancellationToken);
+        IReadOnlyList<Order> result = await _sut.GetAllOrdersAsync(cancellationToken: TestContext.CancellationToken);
 
         // Assert.
         Assert.HasCount(2, result);
@@ -133,7 +133,7 @@ public sealed class EfCoreDataAdapterTests : IAsyncDisposable
     public async Task WhenGetAllOrdersAsyncAndNoEntitiesExist_ThenEmptyListIsReturned()
     {
         // Act.
-        IReadOnlyList<Order> result = await _sut.GetAllOrdersAsync(TestContext.CancellationToken);
+        IReadOnlyList<Order> result = await _sut.GetAllOrdersAsync(cancellationToken: TestContext.CancellationToken);
 
         // Assert.
         Assert.IsEmpty(result);

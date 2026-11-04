@@ -27,11 +27,12 @@ public interface IManufacturingService
     Task<Order?> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all orders.
+    /// Gets all orders, optionally filtered by a case-insensitive name substring.
     /// </summary>
+    /// <param name="nameFilter">When non-null and non-empty, only orders whose name contains this value are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>An enumerable of all <see cref="Order"/> instances.</returns>
-    Task<IEnumerable<Order>> GetAllOrdersAsync(CancellationToken cancellationToken = default);
+    /// <returns>An enumerable of matching <see cref="Order"/> instances.</returns>
+    Task<IEnumerable<Order>> GetAllOrdersAsync(string? nameFilter = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates the order with the given ID using the provided request data.
@@ -107,11 +108,12 @@ public interface IManufacturingService
     Task<Board?> GetBoardByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all boards.
+    /// Gets all boards, optionally filtered by a case-insensitive name substring.
     /// </summary>
+    /// <param name="nameFilter">When non-null and non-empty, only boards whose name contains this value are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>An enumerable of all <see cref="Board"/> instances.</returns>
-    Task<IEnumerable<Board>> GetAllBoardsAsync(CancellationToken cancellationToken = default);
+    /// <returns>An enumerable of matching <see cref="Board"/> instances.</returns>
+    Task<IEnumerable<Board>> GetAllBoardsAsync(string? nameFilter = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates the board with the given ID using the provided request data.
@@ -178,11 +180,12 @@ public interface IManufacturingService
     Task<Component?> GetComponentByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all components.
+    /// Gets all components, optionally filtered by a case-insensitive name substring.
     /// </summary>
+    /// <param name="nameFilter">When non-null and non-empty, only components whose name contains this value are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>An enumerable of all <see cref="Component"/> instances.</returns>
-    Task<IEnumerable<Component>> GetAllComponentsAsync(CancellationToken cancellationToken = default);
+    /// <returns>An enumerable of matching <see cref="Component"/> instances.</returns>
+    Task<IEnumerable<Component>> GetAllComponentsAsync(string? nameFilter = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates the component with the given ID using the provided request data.

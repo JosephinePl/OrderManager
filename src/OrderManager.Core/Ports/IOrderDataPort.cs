@@ -25,11 +25,12 @@ public interface IOrderDataPort
     Task<Order?> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all orders.
+    /// Gets all orders, optionally filtered by a case-insensitive name substring.
     /// </summary>
+    /// <param name="nameFilter">When non-null and non-empty, only orders whose name contains this value are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A read-only list of all orders.</returns>
-    Task<IReadOnlyList<Order>> GetAllOrdersAsync(CancellationToken cancellationToken = default);
+    /// <returns>A read-only list of matching orders.</returns>
+    Task<IReadOnlyList<Order>> GetAllOrdersAsync(string? nameFilter = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Adds a new order.

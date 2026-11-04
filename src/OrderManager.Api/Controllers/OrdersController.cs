@@ -35,13 +35,14 @@ public sealed class OrdersController : ControllerBase
 
     #region Public Methods
 
-    /// <summary>Returns all orders.</summary>
+    /// <summary>Returns all orders, optionally filtered by name substring.</summary>
+    /// <param name="name">When provided, only orders whose name contains this value (case-insensitive) are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>An <see cref="IActionResult"/> containing all orders.</returns>
+    /// <returns>An <see cref="IActionResult"/> containing matching orders.</returns>
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll([FromQuery] string? name, CancellationToken cancellationToken)
     {
-        IEnumerable<Order> orders = await _service.GetAllOrdersAsync(cancellationToken);
+        IEnumerable<Order> orders = await _service.GetAllOrdersAsync(name, cancellationToken);
         return Ok(orders);
     }
 
@@ -90,15 +91,16 @@ public sealed class OrdersController : ControllerBase
         return deleted ? NoContent() : NotFound();
     }
 
-    /// <summary>Adds a board to the order. Returns 204 or 404.</summary>
+    /// <summary>Adds a board to the order, or updates its quantity if already present. Returns 204 or 404.</summary>
     /// <param name="orderId">The ID of the order.</param>
     /// <param name="boardId">The ID of the board to add.</param>
+    /// <param name="request">The quantity data.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>An <see cref="IActionResult"/> with 204 if added, or 404 if not found.</returns>
+    /// <returns>An <see cref="IActionResult"/> with 204 if added or updated, or 404 if not found.</returns>
     [HttpPut("{orderId:guid}/boards/{boardId:guid}")]
-    public async Task<IActionResult> AddBoard(Guid orderId, Guid boardId, CancellationToken cancellationToken)
+    public async Task<IActionResult> AddBoard(Guid orderId, Guid boardId, AddBoardToOrderRequest request, CancellationToken cancellationToken)
     {
-        bool added = await _service.AddBoardToOrderAsync(orderId, boardId, cancellationToken);
+        bool added = await _service.AddBoardToOrderAsync(orderId, boardId, request.Quantity, cancellationToken);
         return added ? NoContent() : NotFound();
     }
 

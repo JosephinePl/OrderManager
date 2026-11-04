@@ -10,7 +10,19 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
 
 builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddSchemaTransformer((schema, context, ct) =>
+    {
+        if (context.JsonTypeInfo.Type == typeof(DateTimeOffset) ||
+            context.JsonTypeInfo.Type == typeof(DateTimeOffset?))
+        {
+            schema.Format = "date-time";
+        }
+
+        return Task.CompletedTask;
+    });
+});
 
 builder.Services.AddDbContext<OrderManagerDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
@@ -38,7 +50,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseExceptionHandler("/error");
 
-app.MapGet("/error", (HttpContext ctx) =>
+app.Map("/error", (HttpContext ctx) =>
 {
     Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature? ex =
         ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();

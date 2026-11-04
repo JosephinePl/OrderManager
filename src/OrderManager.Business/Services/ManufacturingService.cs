@@ -90,13 +90,14 @@ public sealed partial class ManufacturingService : IManufacturingService
     }
 
     /// <summary>
-    /// Gets all orders.
+    /// Gets all orders, optionally filtered by a case-insensitive name substring.
     /// </summary>
+    /// <param name="nameFilter">When non-null and non-empty, only orders whose name contains this value are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>An enumerable of all <see cref="Order"/> instances.</returns>
-    public async Task<IEnumerable<Order>> GetAllOrdersAsync(CancellationToken cancellationToken = default)
+    /// <returns>An enumerable of matching <see cref="Order"/> instances.</returns>
+    public async Task<IEnumerable<Order>> GetAllOrdersAsync(string? nameFilter = null, CancellationToken cancellationToken = default)
     {
-        return await _orderData.GetAllOrdersAsync(cancellationToken);
+        return await _orderData.GetAllOrdersAsync(nameFilter, cancellationToken);
     }
 
     /// <summary>
@@ -273,13 +274,14 @@ public sealed partial class ManufacturingService : IManufacturingService
     }
 
     /// <summary>
-    /// Gets all boards.
+    /// Gets all boards, optionally filtered by a case-insensitive name substring.
     /// </summary>
+    /// <param name="nameFilter">When non-null and non-empty, only boards whose name contains this value are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>An enumerable of all <see cref="Board"/> instances.</returns>
-    public async Task<IEnumerable<Board>> GetAllBoardsAsync(CancellationToken cancellationToken = default)
+    /// <returns>An enumerable of matching <see cref="Board"/> instances.</returns>
+    public async Task<IEnumerable<Board>> GetAllBoardsAsync(string? nameFilter = null, CancellationToken cancellationToken = default)
     {
-        return await _boardData.GetAllBoardsAsync(cancellationToken);
+        return await _boardData.GetAllBoardsAsync(nameFilter, cancellationToken);
     }
 
     /// <summary>
@@ -453,13 +455,14 @@ public sealed partial class ManufacturingService : IManufacturingService
     }
 
     /// <summary>
-    /// Gets all components.
+    /// Gets all components, optionally filtered by a case-insensitive name substring.
     /// </summary>
+    /// <param name="nameFilter">When non-null and non-empty, only components whose name contains this value are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>An enumerable of all <see cref="Component"/> instances.</returns>
-    public async Task<IEnumerable<Component>> GetAllComponentsAsync(CancellationToken cancellationToken = default)
+    /// <returns>An enumerable of matching <see cref="Component"/> instances.</returns>
+    public async Task<IEnumerable<Component>> GetAllComponentsAsync(string? nameFilter = null, CancellationToken cancellationToken = default)
     {
-        return await _componentData.GetAllComponentsAsync(cancellationToken);
+        return await _componentData.GetAllComponentsAsync(nameFilter, cancellationToken);
     }
 
     /// <summary>

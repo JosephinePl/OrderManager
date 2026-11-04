@@ -35,13 +35,14 @@ public sealed class BoardsController : ControllerBase
 
     #region Public Methods
 
-    /// <summary>Returns all boards.</summary>
+    /// <summary>Returns all boards, optionally filtered by name substring.</summary>
+    /// <param name="name">When provided, only boards whose name contains this value (case-insensitive) are returned.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>An <see cref="IActionResult"/> containing all boards.</returns>
+    /// <returns>An <see cref="IActionResult"/> containing matching boards.</returns>
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll([FromQuery] string? name, CancellationToken cancellationToken)
     {
-        IEnumerable<Board> boards = await _service.GetAllBoardsAsync(cancellationToken);
+        IEnumerable<Board> boards = await _service.GetAllBoardsAsync(name, cancellationToken);
         return Ok(boards);
     }
 
