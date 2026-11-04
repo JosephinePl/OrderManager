@@ -5,10 +5,14 @@ using OrderManager.Core.Ports;
 using OrderManager.Data;
 using OrderManager.Data.Adapters;
 using Scalar.AspNetCore;
+using Serilog;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
+builder.Logging.AddSerilog(new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .CreateLogger());
 
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers();
