@@ -22,7 +22,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: "http://+:8080"
       ConnectionStrings__Default: "Host=db;Port=5432;Database=ordermanager;Username=postgres;Password=dev"
     depends_on:
       db:
