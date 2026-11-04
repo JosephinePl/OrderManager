@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Diagnostics;
+﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using OrderManager.Business.Services;
 using OrderManager.Core.Ports;
@@ -66,10 +66,10 @@ app.MapControllers();
 app.Run();
 
 // Consider extracting to a class implementing IExceptionHandler for testability and DI logging support.
-static IResult HandleException(HttpContext ctx)
+static IResult HandleException(HttpContext context)
 {
-    IExceptionHandlerFeature? ex = ctx.Features.Get<IExceptionHandlerFeature>();
-    return ex?.Error switch
+    IExceptionHandlerFeature? exceptionHandlerFeature = context.Features.Get<IExceptionHandlerFeature>();
+    return exceptionHandlerFeature?.Error switch
     {
         KeyNotFoundException => Results.Problem(statusCode: StatusCodes.Status404NotFound),
         ArgumentException e => Results.Problem(detail: e.Message, statusCode: StatusCodes.Status400BadRequest),

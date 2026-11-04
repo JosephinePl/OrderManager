@@ -1,4 +1,4 @@
-namespace OrderManager.Business.Services;
+﻿namespace OrderManager.Business.Services;
 
 using Microsoft.Extensions.Logging;
 using OrderManager.Core.Entities;
@@ -60,6 +60,8 @@ public sealed partial class ManufacturingService : IManufacturingService
     }
 
     #endregion
+
+    #region Public Methods
 
     #region Orders
 
@@ -527,6 +529,8 @@ public sealed partial class ManufacturingService : IManufacturingService
 
         return result;
     }
+
+    #endregion
 
     #endregion
 

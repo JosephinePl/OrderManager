@@ -1,4 +1,4 @@
-namespace OrderManager.Data.Adapters;
+﻿namespace OrderManager.Data.Adapters;
 
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -8,19 +8,15 @@ using OrderManager.Core.Ports;
 /// <summary>
 /// Simulates exporting an <see cref="Order"/> to a production line by writing a JSON file to disk.
 /// </summary>
-public sealed class SimulatedFileExportAdapter : IProductionLineExporter
+public sealed partial class SimulatedFileExportAdapter : IProductionLineExporter
 {
-    #region Constants
+    #region Fields
 
     /// <summary>The directory to which export files are written.</summary>
     private static readonly string ExportDirectory = Path.Combine(Path.GetTempPath(), "OrderManagerExports");
 
     /// <summary>Cached serializer options shared across all export calls.</summary>
     private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions { WriteIndented = true };
-
-    #endregion
-
-    #region Fields
 
     /// <summary>The logger.</summary>
     private readonly ILogger<SimulatedFileExportAdapter> _logger;
@@ -62,10 +58,7 @@ public sealed class SimulatedFileExportAdapter : IProductionLineExporter
         string filePath = Path.Combine(ExportDirectory, fileName);
         await File.WriteAllTextAsync(filePath, json, cancellationToken);
 
-        // filePath is pre-computed for the file write above — CA1873 does not apply here.
-#pragma warning disable CA1873
-        _logger.LogInformation("Simulated export of order {OrderId} written to {FilePath}.", order.Id, filePath);
-#pragma warning restore CA1873
+        LogExportWritten(_logger, order.Id, filePath);
     }
 
     #endregion
@@ -79,9 +72,14 @@ public sealed class SimulatedFileExportAdapter : IProductionLineExporter
     /// <returns>The export payload.</returns>
     private static ExportPayload BuildPayload(Order order)
     {
-        IEnumerable<ExportBoardPayload> boards = order.OrderBoards.Select(ob => BuildBoardPayload(ob.Board));
-        ExportPayload result = new ExportPayload(order.Id, order.Name, order.Description, order.OrderDate, boards);
-        return result;
+        List<ExportBoardPayload> boards = [];
+        foreach (OrderBoard ob in order.OrderBoards)
+        {
+            ExportBoardPayload exportBoardPayload = BuildBoardPayload(ob.Board);
+            boards.Add(exportBoardPayload);
+        }
+
+        return new ExportPayload(order.Id, order.Name, order.Description, order.OrderDate, boards);
     }
 
     /// <summary>
@@ -91,15 +89,30 @@ public sealed class SimulatedFileExportAdapter : IProductionLineExporter
     /// <returns>The board payload.</returns>
     private static ExportBoardPayload BuildBoardPayload(Board board)
     {
-        IEnumerable<ExportComponentPayload> components = board.BoardComponents.Select(
-            bc => new ExportComponentPayload(bc.Component.Id, bc.Component.Name, bc.Component.Description, bc.Component.Quantity, bc.QuantityPerBoard));
-        ExportBoardPayload result = new ExportBoardPayload(board.Id, board.Name, board.Description, board.Length, board.Width, components);
-        return result;
+        List<ExportComponentPayload> components = [];
+        foreach (BoardComponent bc in board.BoardComponents)
+        {
+            components.Add(new ExportComponentPayload(
+                bc.Component!.Id,
+                bc.Component.Name,
+                bc.Component.Description,
+                bc.Component.Quantity,
+                bc.QuantityPerBoard));
+        }
+
+        return new ExportBoardPayload(board.Id, board.Name, board.Description, board.Length, board.Width, components);
     }
 
     #endregion
 
-    #region Classes
+    #region Logging
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Simulated export of order {OrderId} written to {FilePath}.")]
+    private static partial void LogExportWritten(ILogger logger, Guid orderId, string filePath);
+
+    #endregion
+
+    #region Private Records
 
     /// <summary>Serialization payload for an order export.</summary>
     /// <param name="Id">The order ID.</param>

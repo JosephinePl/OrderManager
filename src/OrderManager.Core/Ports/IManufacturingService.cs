@@ -1,4 +1,4 @@
-namespace OrderManager.Core.Ports;
+﻿namespace OrderManager.Core.Ports;
 
 using OrderManager.Core.Entities;
 using OrderManager.Core.Requests;
@@ -8,7 +8,7 @@ using OrderManager.Core.Requests;
 /// </summary>
 public interface IManufacturingService
 {
-    // ── Orders ─────────────────────────────────────────────────────────────
+    #region Methods
 
     /// <summary>
     /// Creates a new order from the given request data.
@@ -89,8 +89,6 @@ public interface IManufacturingService
     /// </returns>
     Task<bool> RemoveBoardFromOrderAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default);
 
-    // ── Boards ─────────────────────────────────────────────────────────────
-
     /// <summary>
     /// Creates a new board from the given request data.
     /// </summary>
@@ -161,8 +159,6 @@ public interface IManufacturingService
     /// </returns>
     Task<bool> RemoveComponentFromBoardAsync(Guid boardId, Guid componentId, CancellationToken cancellationToken = default);
 
-    // ── Components ─────────────────────────────────────────────────────────
-
     /// <summary>
     /// Creates a new component from the given request data.
     /// </summary>
@@ -207,4 +203,6 @@ public interface IManufacturingService
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown when the component is still assigned to one or more boards.</exception>
     Task<bool> DeleteComponentAsync(Guid id, CancellationToken cancellationToken = default);
+
+    #endregion
 }

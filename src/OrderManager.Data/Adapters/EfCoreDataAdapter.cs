@@ -9,7 +9,7 @@ using OrderManager.Core.Ports;
 /// <summary>
 /// EF Core implementation of <see cref="IOrderDataPort"/>, <see cref="IBoardDataPort"/>, and <see cref="IComponentDataPort"/>.
 /// </summary>
-public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, IComponentDataPort
+public sealed partial class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, IComponentDataPort
 {
     #region Fields
 
@@ -60,6 +60,10 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
                         .ThenInclude(bc => bc.Component)
                 .LoadAsync(cancellationToken);
         }
+        else
+        {
+            // Order not found — nothing to load, return null as-is.
+        }
 
         return order;
     }
@@ -87,6 +91,10 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
         if (!string.IsNullOrWhiteSpace(nameFilter))
         {
             query = query.Where(o => EF.Functions.ILike(o.Name, $"%{nameFilter}%"));
+        }
+        else
+        {
+            // No filter provided — return all orders unfiltered.
         }
 
         return await query.ToListAsync(cancellationToken);
@@ -143,6 +151,10 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
                 .Include(bc => bc.Component)
                 .LoadAsync(cancellationToken);
         }
+        else
+        {
+            // Board not found — nothing to load, return null as-is.
+        }
 
         return board;
     }
@@ -170,6 +182,10 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
         if (!string.IsNullOrWhiteSpace(nameFilter))
         {
             query = query.Where(b => EF.Functions.ILike(b.Name, $"%{nameFilter}%"));
+        }
+        else
+        {
+            // No filter provided — return all boards unfiltered.
         }
 
         return await query.ToListAsync(cancellationToken);
@@ -231,6 +247,10 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
         if (!string.IsNullOrWhiteSpace(nameFilter))
         {
             query = query.Where(c => EF.Functions.ILike(c.Name, $"%{nameFilter}%"));
+        }
+        else
+        {
+            // No filter provided — return all components unfiltered.
         }
 
         return await query.ToListAsync(cancellationToken);
@@ -314,7 +334,7 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
         }
         catch (Npgsql.PostgresException ex) when (ex.SqlState is "23503")
         {
-            _logger.LogWarning(ex, "FK violation adding board {BoardId} to order {OrderId}; one of the entities no longer exists.", boardId, orderId);
+            LogFkViolationBoardToOrder(ex, boardId, orderId);
             throw new NotFoundException($"Order {orderId} or board {boardId} no longer exists.");
         }
     }
@@ -356,7 +376,7 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
         }
         catch (Npgsql.PostgresException ex) when (ex.SqlState is "23503")
         {
-            _logger.LogWarning(ex, "FK violation adding component {ComponentId} to board {BoardId}; one of the entities no longer exists.", componentId, boardId);
+            LogFkViolationComponentToBoard(ex, componentId, boardId);
             throw new NotFoundException($"Board {boardId} or component {componentId} no longer exists.");
         }
     }
@@ -378,6 +398,16 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
 
     #endregion
 
+    #region Logging
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "FK violation adding board {BoardId} to order {OrderId}; one of the entities no longer exists.")]
+    private partial void LogFkViolationBoardToOrder(Exception ex, Guid boardId, Guid orderId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "FK violation adding component {ComponentId} to board {BoardId}; one of the entities no longer exists.")]
+    private partial void LogFkViolationComponentToBoard(Exception ex, Guid componentId, Guid boardId);
+
+    #endregion
+
     #region Private Methods
 
     /// <summary>
@@ -394,6 +424,10 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
         if (entity is not null)
         {
             _context.Entry(entity).State = EntityState.Detached;
+        }
+        else
+        {
+            // Nothing to detach — EF Core never tracked a null result.
         }
 
         return entity;

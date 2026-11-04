@@ -1,4 +1,4 @@
-namespace OrderManager.Data.Tests.Integration;
+﻿namespace OrderManager.Data.Tests.Integration;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -25,7 +25,7 @@ public sealed class EfCoreDataAdapterIntegrationTests : IAsyncDisposable
     private OrderManagerDbContext _context = null!;
 
     /// <summary>System under test.</summary>
-    private EfCoreDataAdapter _sut = null!;
+    private EfCoreDataAdapter _testObject = null!;
 
     /// <summary>Gets or sets the MSTest context for the current test.</summary>
     public TestContext TestContext { get; set; } = null!;
@@ -59,7 +59,7 @@ public sealed class EfCoreDataAdapterIntegrationTests : IAsyncDisposable
     [TestInitialize]
     public void Initialize()
     {
-        (_context, _sut) = CreateContextAndSut();
+        (_context, _testObject) = CreateContextAndTestObject();
     }
 
     /// <summary>Truncates all data and disposes the context after each test.</summary>
@@ -78,17 +78,17 @@ public sealed class EfCoreDataAdapterIntegrationTests : IAsyncDisposable
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [TestMethod]
-    public async Task GetOrderWithDetails_ReturnsFullyHydratedGraph()
+    public async Task WhenGetOrderWithDetailsAsyncAndOrderExists_ThenFullGraphIsReturned()
     {
         Order order = await SeedOrderAsync();
         Board board = await SeedBoardAsync();
         Component component = await SeedComponentAsync();
 
-        await _sut.AddBoardToOrderAsync(order.Id, board.Id, 1, TestContext.CancellationToken);
-        await _sut.AddComponentToBoardAsync(board.Id, component.Id, 3, TestContext.CancellationToken);
+        await _testObject.AddBoardToOrderAsync(order.Id, board.Id, 1, TestContext.CancellationToken);
+        await _testObject.AddComponentToBoardAsync(board.Id, component.Id, 3, TestContext.CancellationToken);
 
         // Fresh context — no change-tracker cache.
-        (OrderManagerDbContext verifyCtx, EfCoreDataAdapter verifyAdapter) = CreateContextAndSut();
+        (OrderManagerDbContext verifyCtx, EfCoreDataAdapter verifyAdapter) = CreateContextAndTestObject();
         await using (verifyCtx)
         {
             Order? result = await verifyAdapter.GetOrderWithDetailsAsync(order.Id, TestContext.CancellationToken);
@@ -110,7 +110,7 @@ public sealed class EfCoreDataAdapterIntegrationTests : IAsyncDisposable
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [TestMethod]
-    public async Task AddBoardToOrder_ConcurrentUpserts_ProducesSingleRow()
+    public async Task WhenAddBoardToOrderAsyncAndConcurrentUpsertsOccur_ThenExactlyOneRowExists()
     {
         Order order = await SeedOrderAsync();
         Board board = await SeedBoardAsync();
@@ -118,7 +118,7 @@ public sealed class EfCoreDataAdapterIntegrationTests : IAsyncDisposable
         // Ten concurrent writers, each claiming a different quantity.
         Task[] writers = Enumerable.Range(1, 10).Select(i =>
         {
-            (OrderManagerDbContext ctx, EfCoreDataAdapter adapter) = CreateContextAndSut();
+            (OrderManagerDbContext ctx, EfCoreDataAdapter adapter) = CreateContextAndTestObject();
             return adapter.AddBoardToOrderAsync(order.Id, board.Id, i, TestContext.CancellationToken)
                 .ContinueWith(_ => ctx.DisposeAsync().AsTask(), TaskScheduler.Default).Unwrap();
         }).ToArray();
@@ -133,11 +133,11 @@ public sealed class EfCoreDataAdapterIntegrationTests : IAsyncDisposable
 
     /// <summary>Creates a new <see cref="OrderManagerDbContext"/> and <see cref="EfCoreDataAdapter"/> pair.</summary>
     /// <returns>A tuple of the context and adapter.</returns>
-    private static (OrderManagerDbContext Context, EfCoreDataAdapter Adapter) CreateContextAndSut()
+    private static (OrderManagerDbContext Context, EfCoreDataAdapter Adapter) CreateContextAndTestObject()
     {
-        OrderManagerDbContext ctx = new(_options);
+        OrderManagerDbContext databaseContext = new(_options);
         ILogger<EfCoreDataAdapter> logger = Substitute.For<ILogger<EfCoreDataAdapter>>();
-        return (ctx, new EfCoreDataAdapter(ctx, logger));
+        return (databaseContext, new EfCoreDataAdapter(databaseContext, logger));
     }
 
     /// <summary>Inserts a seed <see cref="Order"/> and returns it.</summary>
