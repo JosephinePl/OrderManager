@@ -56,6 +56,8 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
                 .Collection(o => o.OrderBoards)
                 .Query()
                 .Include(ob => ob.Board)
+                    .ThenInclude(b => b.BoardComponents)
+                        .ThenInclude(bc => bc.Component)
                 .LoadAsync(cancellationToken);
         }
 
