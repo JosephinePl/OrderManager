@@ -20,8 +20,9 @@ classDiagram
             +string? Description
             +decimal Length
             +decimal Width
-            +IReadOnlyList~OrderBoard~ OrderBoards
             +IReadOnlyList~BoardComponent~ BoardComponents
+            +AddComponent(BoardComponent) void
+            +RemoveComponent(Guid componentId) void
         }
         class Component {
             +Guid Id
@@ -29,9 +30,16 @@ classDiagram
             +string? Description
             +int Quantity
         }
+        class OrderBoard {
+            +Guid OrderId
+            +Guid BoardId
+            +Board Board
+            +int Quantity
+        }
         class BoardComponent {
             +Guid BoardId
             +Guid ComponentId
+            +Component Component
             +int QuantityPerBoard
         }
     }
@@ -45,11 +53,12 @@ classDiagram
             +AddOrderAsync(Order order, CancellationToken ct) Task
             +UpdateOrderAsync(Order order, CancellationToken ct) Task
             +DeleteOrderAsync(Guid id, CancellationToken ct) Task
-            +AddBoardToOrderAsync(Guid orderId, Guid boardId, CancellationToken ct) Task
+            +AddBoardToOrderAsync(Guid orderId, Guid boardId, int qty, CancellationToken ct) Task
             +RemoveBoardFromOrderAsync(Guid orderId, Guid boardId, CancellationToken ct) Task~bool~
         }
         class IBoardDataPort {
             <<interface>>
+            +GetBoardWithDetailsAsync(Guid id, CancellationToken ct) Task~Board?~
             +GetBoardByIdAsync(Guid id, CancellationToken ct) Task~Board?~
             +GetAllBoardsAsync(CancellationToken ct) Task~IReadOnlyList~Board~~
             +AddBoardAsync(Board board, CancellationToken ct) Task
@@ -74,7 +83,7 @@ classDiagram
             +UpdateOrderAsync(Guid id, UpdateOrderRequest req, CancellationToken ct) Task~Order?~
             +DeleteOrderAsync(Guid id, CancellationToken ct) Task~bool~
             +ExportToProductionLineAsync(Guid id, CancellationToken ct) Task
-            +AddBoardToOrderAsync(Guid orderId, Guid boardId, CancellationToken ct) Task~bool~
+            +AddBoardToOrderAsync(Guid orderId, Guid boardId, int qty, CancellationToken ct) Task~bool~
             +RemoveBoardFromOrderAsync(Guid orderId, Guid boardId, CancellationToken ct) Task~bool~
             +CreateBoardAsync(CreateBoardRequest req, CancellationToken ct) Task~Board~
             +GetBoardByIdAsync(Guid id, CancellationToken ct) Task~Board?~
@@ -130,6 +139,23 @@ classDiagram
             <<composition root>>
             +WebApplication Build(string[] args)$
         }
+        class OrderResponse {
+            +Guid Id
+            +string Name
+            +string Description
+            +DateTimeOffset OrderDate
+            +IReadOnlyList~BoardEntry~ Boards
+            +From(Order o)$ OrderResponse
+        }
+        class BoardResponse {
+            +Guid Id
+            +string Name
+            +string Description
+            +decimal Length
+            +decimal Width
+            +IReadOnlyList~ComponentEntry~ Components
+            +From(Board b)$ BoardResponse
+        }
         class OrdersController {
             -IManufacturingService _service
             +GetAll(CancellationToken ct) Task~IActionResult~
@@ -161,11 +187,11 @@ classDiagram
         }
     }
 
-    %% Domain relationships
-    Order "1" --> "*" Board : has (via OrderBoard)
-    Board "1" --> "*" Component : has (via BoardComponent)
-    BoardComponent --> Board
-    BoardComponent --> Component
+    %% Domain relationships (one-directional per ADR-011)
+    Order "1" --> "*" OrderBoard : owns
+    OrderBoard --> Board : references
+    Board "1" --> "*" BoardComponent : owns
+    BoardComponent --> Component : references
 
     %% Implementations
     ManufacturingService ..|> IManufacturingService
@@ -188,6 +214,10 @@ classDiagram
     BoardsController --> IManufacturingService : injects
     ComponentsController --> IManufacturingService : injects
 
+    %% Controllers map entities to DTOs
+    OrdersController --> OrderResponse : maps to
+    BoardsController --> BoardResponse : maps to
+
     %% Program.cs wires ports to adapters (composition root)
     Program ..> IOrderDataPort : registers EfCoreDataAdapter
     Program ..> IBoardDataPort : registers EfCoreDataAdapter
@@ -198,10 +228,10 @@ classDiagram
 
 ## Notes
 
-- `OrderBoard` (Order ↔ Board junction) has no payload — EF Core maps it via `UsingEntity` without a dedicated class; shown as a navigational relationship only.
-- `BoardComponent` has `QuantityPerBoard` payload so it gets its own class.
+- Navigation is **one-directional** per [ADR-011](../adr/ADR-011-domain-ownership.md): `Order → Board` and `Board → Component`. `Board` and `Component` are Stammdaten and have no back-references to their owning aggregates.
+- `OrderBoard` carries `Quantity` (boards per order); `BoardComponent` carries `QuantityPerBoard` (components per board).
+- Controllers map domain entities to response DTOs (`OrderResponse`, `BoardResponse`) before serialisation — no direct entity serialisation.
 - `ManufacturingService` owns all three data ports directly; no service-to-service injection is needed. See [ADR-010](../adr/ADR-010-unified-manufacturing-service.md) for the rationale.
 - `IOrderDataPort`, `IBoardDataPort`, and `IComponentDataPort` remain split per [ADR-009](../adr/ADR-009-split-data-ports.md) — ISP still applies at the persistence layer.
 - `SimulatedFileExportAdapter` is registered in DI for the `Development` environment only; a real factory-floor adapter (MQTT, IPC-CFX) replaces it in `Production` via a single DI registration change.
 - `Program.cs` is the **Composition Root** — the only place that references both `OrderManager.Data` and `OrderManager.Business`.
-- `EfCoreDataAdapter` commits immediately inside each mutating method — `SaveChangesAsync` is an EF Core detail that must not leak into the `Core` port interface.
