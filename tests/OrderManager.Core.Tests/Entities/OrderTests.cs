@@ -138,7 +138,7 @@ public sealed class OrderTests
     private static OrderBoard CreateOrderBoard(Order order)
     {
         Board board = new(Guid.NewGuid(), "Board", "Description", 100m, 50m);
-        OrderBoard result = new(order.Id, order, board.Id, board);
+        OrderBoard result = new(order.Id, board.Id, board, 1);
         return result;
     }
 

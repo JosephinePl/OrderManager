@@ -11,27 +11,9 @@ namespace OrderManager.Core.Entities;
 public sealed record Board(Guid Id, string Name, string Description, decimal Length, decimal Width)
 {
     /// <summary>
-    /// Backing store for <see cref="OrderBoards"/>.
-    /// </summary>
-    private readonly List<OrderBoard> _orderBoards = [];
-
-    /// <summary>
     /// Backing store for <see cref="BoardComponents"/>.
     /// </summary>
     private readonly List<BoardComponent> _boardComponents = [];
-
-    #region Properties
-
-    /// <summary>
-    /// Gets the order associations for this board.
-    /// </summary>
-    public IReadOnlyList<OrderBoard> OrderBoards
-    {
-        get
-        {
-            return _orderBoards;
-        }
-    }
 
     /// <summary>
     /// Gets the component associations for this board.
@@ -42,28 +24,6 @@ public sealed record Board(Guid Id, string Name, string Description, decimal Len
         {
             return _boardComponents;
         }
-    }
-
-    #endregion
-
-    #region Methods
-
-    /// <summary>
-    /// Adds an order association to this board.
-    /// </summary>
-    /// <param name="orderBoard">The order association to add.</param>
-    public void AddOrder(OrderBoard orderBoard)
-    {
-        _orderBoards.Add(orderBoard);
-    }
-
-    /// <summary>
-    /// Removes the order association with the given order ID from this board.
-    /// </summary>
-    /// <param name="orderId">The ID of the order whose association to remove.</param>
-    public void RemoveOrder(Guid orderId)
-    {
-        _orderBoards.RemoveAll(ob => ob.OrderId == orderId);
     }
 
     /// <summary>
@@ -104,6 +64,4 @@ public sealed record Board(Guid Id, string Name, string Description, decimal Len
         int result = Id.GetHashCode();
         return result;
     }
-
-    #endregion
 }

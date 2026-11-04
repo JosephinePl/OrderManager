@@ -86,7 +86,7 @@ public sealed partial class ManufacturingService : IManufacturingService
     /// <returns>The matching <see cref="Order"/>, or <see langword="null"/> if not found.</returns>
     public async Task<Order?> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _orderData.GetOrderByIdAsync(id, cancellationToken);
+        return await _orderData.GetOrderWithDetailsAsync(id, cancellationToken);
     }
 
     /// <summary>
@@ -166,17 +166,17 @@ public sealed partial class ManufacturingService : IManufacturingService
     }
 
     /// <summary>
-    /// Adds a board to the order with the given ID.
-    /// Has no effect if the board is already part of the order.
+    /// Adds a board to the order with the given ID, or updates its quantity if already present.
     /// </summary>
     /// <param name="orderId">The ID of the order.</param>
     /// <param name="boardId">The ID of the board to add.</param>
+    /// <param name="quantity">The number of this board required for the order.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>
-    /// <see langword="true"/> if the board was added;
+    /// <see langword="true"/> if the board was added or updated;
     /// <see langword="false"/> if the order or board was not found.
     /// </returns>
-    public async Task<bool> AddBoardToOrderAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default)
+    public async Task<bool> AddBoardToOrderAsync(Guid orderId, Guid boardId, int quantity, CancellationToken cancellationToken = default)
     {
         bool result;
         Order? order = await _orderData.GetOrderByIdAsync(orderId, cancellationToken);
@@ -195,7 +195,7 @@ public sealed partial class ManufacturingService : IManufacturingService
             {
                 try
                 {
-                    await _orderData.AddBoardToOrderAsync(orderId, boardId, cancellationToken);
+                    await _orderData.AddBoardToOrderAsync(orderId, boardId, quantity, cancellationToken);
                     LogBoardAddedToOrder(_logger, boardId, orderId);
                     result = true;
                 }
@@ -269,7 +269,7 @@ public sealed partial class ManufacturingService : IManufacturingService
     /// <returns>The matching <see cref="Board"/>, or <see langword="null"/> if not found.</returns>
     public async Task<Board?> GetBoardByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _boardData.GetBoardByIdAsync(id, cancellationToken);
+        return await _boardData.GetBoardWithDetailsAsync(id, cancellationToken);
     }
 
     /// <summary>

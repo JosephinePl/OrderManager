@@ -8,6 +8,15 @@ using OrderManager.Core.Entities;
 public interface IBoardDataPort
 {
     /// <summary>
+    /// Gets a board by its ID with all related components eagerly loaded,
+    /// or <see langword="null"/> if not found.
+    /// </summary>
+    /// <param name="id">The ID of the board to retrieve.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The matching board with components populated, or <see langword="null"/> if not found.</returns>
+    Task<Board?> GetBoardWithDetailsAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets a board by its ID, or <see langword="null"/> if not found.
     /// </summary>
     /// <param name="id">The ID of the board to retrieve.</param>

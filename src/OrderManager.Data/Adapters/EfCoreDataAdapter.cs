@@ -56,8 +56,6 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
                 .Collection(o => o.OrderBoards)
                 .Query()
                 .Include(ob => ob.Board)
-                    .ThenInclude(b => b.BoardComponents)
-                        .ThenInclude(bc => bc.Component)
                 .LoadAsync(cancellationToken);
         }
 
@@ -116,6 +114,28 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     public async Task<bool> DeleteOrderAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await DeleteAsync(_context.Orders, id, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets a board by its ID with all related components eagerly loaded,
+    /// or <see langword="null"/> if not found.
+    /// </summary>
+    /// <param name="id">The ID of the board to retrieve.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The matching board with components populated, or <see langword="null"/> if not found.</returns>
+    public async Task<Board?> GetBoardWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        Board? board = await _context.Boards.FindAsync(new object[] { id }, cancellationToken);
+        if (board is not null)
+        {
+            await _context.Entry(board)
+                .Collection(b => b.BoardComponents)
+                .Query()
+                .Include(bc => bc.Component)
+                .LoadAsync(cancellationToken);
+        }
+
+        return board;
     }
 
     /// <summary>
@@ -254,24 +274,25 @@ public sealed class EfCoreDataAdapter : IOrderDataPort, IBoardDataPort, ICompone
     /// </summary>
     /// <param name="orderId">The ID of the order.</param>
     /// <param name="boardId">The ID of the board to associate.</param>
+    /// <param name="quantity">The number of this board required for the order.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task AddBoardToOrderAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default)
+    public async Task AddBoardToOrderAsync(Guid orderId, Guid boardId, int quantity, CancellationToken cancellationToken = default)
     {
         try
         {
             await _context.Database.ExecuteSqlInterpolatedAsync(
-                $"""INSERT INTO "OrderBoards" ("OrderId", "BoardId") VALUES ({orderId}, {boardId})""",
+                $"""
+                INSERT INTO "OrderBoards" ("OrderId", "BoardId", "Quantity")
+                VALUES ({orderId}, {boardId}, {quantity})
+                ON CONFLICT ("OrderId", "BoardId") DO UPDATE SET "Quantity" = EXCLUDED."Quantity"
+                """,
                 cancellationToken);
         }
         catch (Npgsql.PostgresException ex) when (ex.SqlState is "23503")
         {
             _logger.LogWarning(ex, "FK violation adding board {BoardId} to order {OrderId}; one of the entities no longer exists.", boardId, orderId);
             throw new NotFoundException($"Order {orderId} or board {boardId} no longer exists.");
-        }
-        catch (Npgsql.PostgresException ex) when (ex.SqlState is "23505")
-        {
-            // concurrent duplicate insert — Postgres can surface this under high concurrency
         }
     }
 

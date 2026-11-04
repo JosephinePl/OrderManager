@@ -11,53 +11,6 @@ public sealed class ComponentTests
     #region Methods
 
     /// <summary>
-    /// Adding a board association appends it to <see cref="Component.BoardComponents"/>.
-    /// </summary>
-    [TestMethod]
-    public void WhenAddBoardIsCalledAndBoardIsNew_ThenBoardComponentsContainsBoard()
-    {
-        Component component = CreateComponent();
-        BoardComponent boardComponent = CreateBoardComponent(component);
-
-        component.AddBoard(boardComponent);
-
-        bool result = component.BoardComponents.Contains(boardComponent);
-        Assert.IsTrue(result);
-    }
-
-    /// <summary>
-    /// Removing an existing board association by its ID removes it from <see cref="Component.BoardComponents"/>.
-    /// </summary>
-    [TestMethod]
-    public void WhenRemoveBoardIsCalledAndBoardExists_ThenBoardComponentsNoLongerContainsBoard()
-    {
-        Component component = CreateComponent();
-        BoardComponent boardComponent = CreateBoardComponent(component);
-        component.AddBoard(boardComponent);
-
-        component.RemoveBoard(boardComponent.BoardId);
-
-        bool result = component.BoardComponents.Contains(boardComponent);
-        Assert.IsFalse(result);
-    }
-
-    /// <summary>
-    /// Removing a board that was never added leaves <see cref="Component.BoardComponents"/> unchanged.
-    /// </summary>
-    [TestMethod]
-    public void WhenRemoveBoardIsCalledAndBoardDoesNotExist_ThenBoardComponentsIsUnchanged()
-    {
-        Component component = CreateComponent();
-        BoardComponent boardComponent = CreateBoardComponent(component);
-        component.AddBoard(boardComponent);
-
-        component.RemoveBoard(Guid.NewGuid());
-
-        int result = component.BoardComponents.Count;
-        Assert.AreEqual(1, result);
-    }
-
-    /// <summary>
     /// Two components with the same ID are equal.
     /// </summary>
     [TestMethod]
@@ -138,7 +91,7 @@ public sealed class ComponentTests
     private static BoardComponent CreateBoardComponent(Component component)
     {
         Board board = new(Guid.NewGuid(), "Board", "Description", 100m, 50m);
-        BoardComponent result = new(board.Id, board, component.Id, component, 2);
+        BoardComponent result = new(board.Id, component.Id, component, 2);
         return result;
     }
 

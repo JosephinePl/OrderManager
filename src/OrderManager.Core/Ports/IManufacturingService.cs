@@ -68,12 +68,13 @@ public interface IManufacturingService
     /// </summary>
     /// <param name="orderId">The ID of the order.</param>
     /// <param name="boardId">The ID of the board to add.</param>
+    /// <param name="quantity">The number of this board required for the order.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>
-    /// <see langword="true"/> if the board was added;
+    /// <see langword="true"/> if the board was added or updated;
     /// <see langword="false"/> if the order or board was not found.
     /// </returns>
-    Task<bool> AddBoardToOrderAsync(Guid orderId, Guid boardId, CancellationToken cancellationToken = default);
+    Task<bool> AddBoardToOrderAsync(Guid orderId, Guid boardId, int quantity, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes a board from the order with the given ID.

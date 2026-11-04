@@ -117,6 +117,9 @@ namespace OrderManager.Data.Migrations
                     b.Property<Guid>("BoardId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
                     b.HasKey("OrderId", "BoardId");
 
                     b.HasIndex("BoardId");

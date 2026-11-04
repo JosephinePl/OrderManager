@@ -193,11 +193,11 @@ public sealed class ManufacturingServiceTests
         _orderData.GetOrderByIdAsync(orderId, Arg.Any<CancellationToken>()).Returns((Order?)null);
 
         // Act.
-        bool result = await _testObject.AddBoardToOrderAsync(orderId, Guid.NewGuid(), TestContext.CancellationToken);
+        bool result = await _testObject.AddBoardToOrderAsync(orderId, Guid.NewGuid(), 1, TestContext.CancellationToken);
 
         // Assert.
         Assert.IsFalse(result);
-        await _orderData.DidNotReceive().AddBoardToOrderAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await _orderData.DidNotReceive().AddBoardToOrderAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
     /// <summary>
@@ -215,11 +215,11 @@ public sealed class ManufacturingServiceTests
         _boardData.GetBoardByIdAsync(boardId, Arg.Any<CancellationToken>()).Returns((Board?)null);
 
         // Act.
-        bool result = await _testObject.AddBoardToOrderAsync(orderId, boardId, TestContext.CancellationToken);
+        bool result = await _testObject.AddBoardToOrderAsync(orderId, boardId, 1, TestContext.CancellationToken);
 
         // Assert.
         Assert.IsFalse(result);
-        await _orderData.DidNotReceive().AddBoardToOrderAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await _orderData.DidNotReceive().AddBoardToOrderAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
     /// <summary>
@@ -238,11 +238,11 @@ public sealed class ManufacturingServiceTests
         _boardData.GetBoardByIdAsync(boardId, Arg.Any<CancellationToken>()).Returns(board);
 
         // Act.
-        bool result = await _testObject.AddBoardToOrderAsync(orderId, boardId, TestContext.CancellationToken);
+        bool result = await _testObject.AddBoardToOrderAsync(orderId, boardId, 1, TestContext.CancellationToken);
 
         // Assert.
         Assert.IsTrue(result);
-        await _orderData.Received(1).AddBoardToOrderAsync(orderId, boardId, Arg.Any<CancellationToken>());
+        await _orderData.Received(1).AddBoardToOrderAsync(orderId, boardId, 1, Arg.Any<CancellationToken>());
     }
 
     #endregion

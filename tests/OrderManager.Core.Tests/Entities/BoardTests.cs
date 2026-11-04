@@ -11,53 +11,6 @@ public sealed class BoardTests
     #region Methods
 
     /// <summary>
-    /// Adding an order association appends it to <see cref="Board.OrderBoards"/>.
-    /// </summary>
-    [TestMethod]
-    public void WhenAddOrderIsCalledAndOrderIsNew_ThenOrderBoardsContainsOrder()
-    {
-        Board board = CreateBoard();
-        OrderBoard orderBoard = CreateOrderBoard(board);
-
-        board.AddOrder(orderBoard);
-
-        bool result = board.OrderBoards.Contains(orderBoard);
-        Assert.IsTrue(result);
-    }
-
-    /// <summary>
-    /// Removing an existing order association by its ID removes it from <see cref="Board.OrderBoards"/>.
-    /// </summary>
-    [TestMethod]
-    public void WhenRemoveOrderIsCalledAndOrderExists_ThenOrderBoardsNoLongerContainsOrder()
-    {
-        Board board = CreateBoard();
-        OrderBoard orderBoard = CreateOrderBoard(board);
-        board.AddOrder(orderBoard);
-
-        board.RemoveOrder(orderBoard.OrderId);
-
-        bool result = board.OrderBoards.Contains(orderBoard);
-        Assert.IsFalse(result);
-    }
-
-    /// <summary>
-    /// Removing an order that was never added leaves <see cref="Board.OrderBoards"/> unchanged.
-    /// </summary>
-    [TestMethod]
-    public void WhenRemoveOrderIsCalledAndOrderDoesNotExist_ThenOrderBoardsIsUnchanged()
-    {
-        Board board = CreateBoard();
-        OrderBoard orderBoard = CreateOrderBoard(board);
-        board.AddOrder(orderBoard);
-
-        board.RemoveOrder(Guid.NewGuid());
-
-        int result = board.OrderBoards.Count;
-        Assert.AreEqual(1, result);
-    }
-
-    /// <summary>
     /// Adding a component association appends it to <see cref="Board.BoardComponents"/>.
     /// </summary>
     [TestMethod]
@@ -185,7 +138,7 @@ public sealed class BoardTests
     private static OrderBoard CreateOrderBoard(Board board)
     {
         Order order = new(Guid.NewGuid(), "Order", "Description", DateTimeOffset.UtcNow);
-        OrderBoard result = new(order.Id, order, board.Id, board);
+        OrderBoard result = new(order.Id, board.Id, board, 1);
         return result;
     }
 
@@ -197,7 +150,7 @@ public sealed class BoardTests
     private static BoardComponent CreateBoardComponent(Board board)
     {
         Component component = new(Guid.NewGuid(), "Component", "Description", 10);
-        BoardComponent result = new(board.Id, board, component.Id, component, 2);
+        BoardComponent result = new(board.Id, component.Id, component, 2);
         return result;
     }
 

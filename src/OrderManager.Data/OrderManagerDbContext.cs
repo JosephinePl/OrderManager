@@ -83,26 +83,25 @@ public sealed class OrderManagerDbContext : DbContext
             .Navigation(o => o.OrderBoards).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         modelBuilder.Entity<Board>()
-            .Navigation(b => b.OrderBoards).UsePropertyAccessMode(PropertyAccessMode.Field);
-
-        modelBuilder.Entity<Board>()
             .Navigation(b => b.BoardComponents).UsePropertyAccessMode(PropertyAccessMode.Field);
-
-        modelBuilder.Entity<Component>()
-            .Navigation(c => c.BoardComponents).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         modelBuilder.Entity<OrderBoard>(entity =>
         {
             entity.HasKey(ob => new { ob.OrderId, ob.BoardId });
-            entity.HasOne(ob => ob.Order).WithMany(o => o.OrderBoards).HasForeignKey(ob => ob.OrderId);
-            entity.HasOne(ob => ob.Board).WithMany(b => b.OrderBoards).HasForeignKey(ob => ob.BoardId);
+            entity.Property(ob => ob.Quantity).IsRequired();
+
+            // Order owns the relationship; Board has no back-navigation
+            entity.HasOne(ob => ob.Board).WithMany().HasForeignKey(ob => ob.BoardId);
+            entity.HasOne<Order>().WithMany(o => o.OrderBoards).HasForeignKey(ob => ob.OrderId);
         });
 
         modelBuilder.Entity<BoardComponent>(entity =>
         {
             entity.HasKey(bc => new { bc.BoardId, bc.ComponentId });
-            entity.HasOne(bc => bc.Board).WithMany(b => b.BoardComponents).HasForeignKey(bc => bc.BoardId);
-            entity.HasOne(bc => bc.Component).WithMany(c => c.BoardComponents).HasForeignKey(bc => bc.ComponentId);
+
+            // Board owns the relationship; Component has no back-navigation
+            entity.HasOne(bc => bc.Component).WithMany().HasForeignKey(bc => bc.ComponentId);
+            entity.HasOne<Board>().WithMany(b => b.BoardComponents).HasForeignKey(bc => bc.BoardId);
         });
     }
 
