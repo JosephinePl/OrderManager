@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using OrderManager.Business.Services;
 using OrderManager.Core.Ports;
@@ -9,6 +10,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
 
+builder.Services.AddProblemDetails();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi(options =>
 {
@@ -49,22 +51,25 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseExceptionHandler("/error");
+app.UseStatusCodePages();
 
-app.Map("/error", (HttpContext ctx) =>
-{
-    Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature? ex =
-        ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
-
-    return ex?.Error switch
-    {
-        KeyNotFoundException => Results.Problem(statusCode: StatusCodes.Status404NotFound),
-        ArgumentException e => Results.Problem(detail: e.Message, statusCode: StatusCodes.Status400BadRequest),
-        _ => Results.Problem(statusCode: StatusCodes.Status500InternalServerError),
-    };
-}).ExcludeFromDescription();
+app.Map("/error", HandleException).ExcludeFromDescription();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Consider extracting to a class implementing IExceptionHandler for testability and DI logging support.
+static IResult HandleException(HttpContext ctx)
+{
+    IExceptionHandlerFeature? ex = ctx.Features.Get<IExceptionHandlerFeature>();
+    return ex?.Error switch
+    {
+        KeyNotFoundException => Results.Problem(statusCode: StatusCodes.Status404NotFound),
+        ArgumentException e => Results.Problem(detail: e.Message, statusCode: StatusCodes.Status400BadRequest),
+        InvalidOperationException e => Results.Problem(detail: e.Message, statusCode: StatusCodes.Status409Conflict),
+        _ => Results.Problem(statusCode: StatusCodes.Status500InternalServerError),
+    };
+}
